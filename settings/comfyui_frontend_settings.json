@@ -1,0 +1,235 @@
+{
+  "custom_prompt": "cabin, grassy hill, seaside, peaceful scene, front view, wooden structure, rolling hills, ocean backdrop, clear sky, daytime, natural lighting, calm atmosphere, isolated, coastal vegetation, gentle slope, scenic view",
+  "api_prompt": "masterpiece, best quality, amazing quality, ultra-detailed,very aesthetic,sharp focus,depth of field,vibrant colors,ray tracing,best lighting,detailed illustration,detailed background,cinematic",
+  "api_neg_prompt": "bad quality,worst quality,worst detail,sketch,lowres,bad anatomy,blurry,(worst quality:1.8),low quality,hands bad,(normal quality:1.3),bad hands,mutated hands and fingers,extra legs,extra arms,duplicate,cropped,jpeg,artifacts,long body,multiple breasts,mutated,disfigured,bad proportions,bad feet,ugly,missing limb,monochrome,face bad",
+  "ai_prompt": "a picture of a cabin on a grassy hill, near the seaside",
+  "prompt_ban": "lowres, bad anatomy, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry",
+  "ai_system_prompt_text_value": "You are a Stable Diffusion prompt writer. Follow these guidelines to generate prompts:\n    1.Prohibited keywords: Do not use any gender-related words such as \"man,\" \"woman,\" \"boy,\" \"girl,\" \"person,\" or similar terms.\n    2.Format: Provide 8 to 16 keywords separated by commas, keeping the prompt concise.\n    3.Content focus: Concentrate solely on visual elements of the image; avoid abstract concepts, art commentary, or descriptions of intent.\n    4.Keyword categories: Ensure the prompt includes keywords from the following categories:\n        - Theme or style (e.g., cyberpunk, fantasy, wasteland)\n        - Location or scene (e.g., back alley, forest, street)\n        - Visual elements or atmosphere (e.g., neon lights, fog, ruined)\n        - Camera angle or composition (e.g., front view, side view, close-up)\n        - Action or expression (e.g., standing, jumping, smirk, calm)\n        - Environmental details (e.g., graffiti, trees)\n        - Time of day or lighting (e.g., sunny day, night, golden hour)\n        - Additional effects (e.g., depth of field, blurry background)\n    5.Creativity and coherence: Select keywords that are diverse and creative, forming a vivid and coherent scene.\n    6.User input: Incorporate the exact keywords from the user's query into the prompt where appropriate.\n    7.Emphasis handling: If the user emphasizes a particular aspect, you may increase the number of keywords in that category (up to 6), but ensure the total number of keywords remains between 8 and 16.\n    8.Character description: You may describe actions and expressions but must not mention specific character traits (such as gender or age). Words that imply a character (e.g., \"warrior\") are allowed as long as they do not violate the prohibited keywords.\n    9.Output: Provide the answer as a single line of comma-separated keywords.",
+  "character1": "none",
+  "character2": "none",
+  "character3": "none",
+  "action": "none",
+  "api_model_file_select": "prefectIllustriousXL_v10.safetensors",
+  "random_seed": 1019975081,
+  "api_image_data": "6.0,20,720,1150,1",
+  "api_image_landscape": false,
+  "api_sampling_list": [
+    {
+      "name": "euler",
+      "description": "A simple and fast sampler using the Euler method for solving differential equations."
+    },
+    {
+      "name": "euler_cfg_pp",
+      "description": "A guided version of Euler with post-processing for sharper results."
+    },
+    {
+      "name": "euler_ancestral",
+      "description": "A stochastic variant of Euler that adds randomness for more creative outputs."
+    },
+    {
+      "name": "heun",
+      "description": "A second-order sampler that improves accuracy over Euler for smoother results."
+    },
+    {
+      "name": "heunpp2",
+      "description": "A Heun-based sampler with additional post-processing for refined outputs."
+    },
+    {
+      "name": "dpm_2",
+      "description": "A deterministic second-order sampler for sharp and consistent results."
+    },
+    {
+      "name": "dpm_2_ancestral",
+      "description": "A stochastic version of DPM_2 that introduces randomness for more diverse outputs."
+    },
+    {
+      "name": "lms",
+      "description": "A multistep sampler using Laplacian smoothing for stable and smooth results."
+    },
+    {
+      "name": "dpm_fast",
+      "description": "A faster version of DPM sampling, prioritizing speed over quality."
+    },
+    {
+      "name": "dpm_adaptive",
+      "description": "An adaptive DPM sampler that adjusts steps dynamically for complex prompts."
+    },
+    {
+      "name": "dpmpp_2s_ancestral",
+      "description": "A second-order sampler with stochasticity for high-quality and creative results."
+    },
+    {
+      "name": "dpmpp_2s_ancestral_cfg_pp",
+      "description": "A guided version of DPM++ 2S Ancestral with post-processing for polished outputs."
+    },
+    {
+      "name": "dpmpp_sde",
+      "description": "A sampler based on Stochastic Differential Equations for very high-quality results."
+    },
+    {
+      "name": "dpmpp_sde_gpu",
+      "description": "A GPU-optimized version of DPM++ SDE for faster sampling with high quality."
+    },
+    {
+      "name": "dpmpp_2m",
+      "description": "A second-order multistep sampler for sharp and detailed results."
+    },
+    {
+      "name": "dpmpp_2m_cfg_pp",
+      "description": "A guided version of DPM++ 2M with post-processing for polished and sharp outputs."
+    },
+    {
+      "name": "dpmpp_2m_sde",
+      "description": "Combines multistep sampling with SDE for the best quality in DPM++ 2M."
+    },
+    {
+      "name": "dpmpp_3m",
+      "description": "A third-order multistep sampler for even sharper and more detailed results."
+    },
+    {
+      "name": "dpmpp_3m_sde_gpu",
+      "description": "A GPU-optimized third-order sampler combining SDE for top-tier quality."
+    },
+    {
+      "name": "ddpm",
+      "description": "A deterministic sampler based on Denoising Diffusion Probabilistic Models."
+    },
+    {
+      "name": "lcm",
+      "description": "A specialized or experimental sampler (details may vary by implementation)."
+    },
+    {
+      "name": "ipndm",
+      "description": "An iterative sampler focusing on predictive noise refinement for high-quality results."
+    },
+    {
+      "name": "ipndm_v",
+      "description": "A variant of IPNDM with additional refinements for better quality."
+    },
+    {
+      "name": "deis",
+      "description": "Diffusion Exponential Integrator Sampler for efficient and sharp results."
+    },
+    {
+      "name": "res_multistep",
+      "description": "A multistep sampler with residual connections for stable and high-quality results."
+    },
+    {
+      "name": "res_multistep_cfg_pp",
+      "description": "A guided version of RES Multistep with post-processing for polished outputs."
+    },
+    {
+      "name": "res_multistep_ancestral",
+      "description": "A stochastic version of RES Multistep for more creative and diverse results."
+    },
+    {
+      "name": "res_multistep_ancestral_cfg_pp",
+      "description": "A guided and stochastic version of RES Multistep with post-processing."
+    },
+    {
+      "name": "gradient_estimation",
+      "description": "An experimental sampler using gradient-based methods for precise sampling."
+    },
+    {
+      "name": "ddim",
+      "description": "A deterministic sampler based on Denoising Diffusion Implicit Models for fast and consistent results."
+    },
+    {
+      "name": "uni_pc",
+      "description": "A Unified Predictor-Corrector sampler balancing speed and quality."
+    },
+    {
+      "name": "uni_pc_bh2",
+      "description": "A second-order variant of UniPC for even better precision and quality."
+    }
+  ],
+  "api_sampling_selected": "dpmpp_2m",
+  "api_scheduler_list": [
+    {
+      "name": "normal",
+      "description": "A standard scheduler with no special adjustments."
+    },
+    {
+      "name": "karras",
+      "description": "A scheduler that uses Karras-inspired step scaling for improved quality."
+    },
+    {
+      "name": "exponential",
+      "description": "An exponential scheduler that adjusts step sizes logarithmically."
+    },
+    {
+      "name": "sgm_uniform",
+      "description": "A uniform scheduler for Stochastic Gradient Models, balancing speed and quality."
+    },
+    {
+      "name": "simple",
+      "description": "A basic scheduler with minimal complexity, ideal for quick results."
+    },
+    {
+      "name": "ddim_uniform",
+      "description": "A uniform scheduler optimized for DDIM sampling."
+    },
+    {
+      "name": "beta",
+      "description": "A beta-based scheduler that adjusts step sizes based on a beta distribution."
+    },
+    {
+      "name": "linear_quadratic",
+      "description": "A scheduler that combines linear and quadratic step scaling for flexibility."
+    },
+    {
+      "name": "kl_optimal",
+      "description": "A scheduler optimized for minimizing the Kullback-Leibler divergence."
+    }
+  ],
+  "api_scheduler_selected": "karras",
+  "api_hf_enable": false,
+  "api_hf_scale": 1.5,
+  "api_hf_denoise": 0.4,
+  "api_hf_upscaler_list": [
+    "ESRGAN_4x",
+    "R-ESRGAN 2x+",
+    "R-ESRGAN 4x+",
+    "R-ESRGAN 4x+ Anime6B",
+    "4x_NMKD-Siax_200k",
+    "8x_NMKD-Superscale_150000_G",
+    "4x-AnimeSharp",
+    "4x-UltraSharp",
+    "ESRGAN_4x",
+    "RealESRGAN_x2",
+    "RealESRGAN_x4"
+  ],
+  "api_hf_upscaler_selected": "4x-UltraSharp(C)",
+  "api_hf_colortransfer": "none",
+  "api_webui_savepath_override": false,
+  "ai_interface": "Remote",
+  "remote_ai_base_url": "https://api.llmapi.com/chat/completions",
+  "remote_ai_model": "deepseek-v3",
+  "remote_ai_api_key": "72c69f2e-9d0f-49a8-aa94-a3b432c9afc4",
+  "remote_ai_timeout": 60,
+  "ai_local_addr": "http://127.0.0.1:8080/chat/completions",
+  "ai_local_temp": 0.7,
+  "ai_local_n_predict": 768,
+  "api_interface": "ComfyUI",
+  "api_addr": "127.0.0.1:8188",
+  "batch_generate_rule": "Once",
+  "selectedLoras": [],
+  "controlNetEnabled": false,
+  "selectedControlNetModel": "diffusion_pytorch_model_promax.safetensors",
+  "controlNetStrength": 1,
+  "controlNetPreprocessors": {
+    "anyLine": false,
+    "depth": false,
+    "openPose": false,
+    "canny": false
+  },
+  "selectedAnyLineStyle": "manga_line",
+  "cnGlobalPreprocessorResolution": 1024,
+  "clipVisionEnabled": false,
+  "selectedClipVisionModel": "clip_vision_g.safetensors",
+  "clipVisionStrength": 1,
+  "hfSteps": 15,
+  "hfCfg": 7,
+  "hfSampler": "",
+  "hfScheduler": ""
+}

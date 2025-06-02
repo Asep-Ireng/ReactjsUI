@@ -1,0 +1,1 @@
+  "illustrious/Castorice__HSR_IL.safetensors": "../loras/illustrious/thumb/castorice_lora.png",

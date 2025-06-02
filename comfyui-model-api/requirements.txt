@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pydantic
+Pillow
+requests
+websocket-client
+numpy
