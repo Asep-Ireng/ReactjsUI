@@ -659,7 +659,7 @@ function App() {
     const payload = { server_address: localImageGeneratorAddress, controlnet_ref_image_base64: controlNetRefImageBase64, controlnet_preprocessors: controlNetPreprocessors, selected_anyline_style: controlNetPreprocessors.anyLine ? selectedAnyLineStyle : undefined, cn_global_preprocessor_resolution: cnGlobalPreprocessorResolution, };
     console.log("Sending payload for CN Preprocessor Preview:", payload);
     try {
-      const response = await fetch("http://192.168.50.106:8000/api/preview-controlnet-preprocessor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), });
+      const response = await fetch("http://localhost:8000/api/preview-controlnet-preprocessor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), });
       if (!response.ok) { const errorData = await response.json().catch(() => ({ detail: "Unknown error during preview." })); throw new Error(errorData.detail || `HTTP error ${response.status}`); }
       const result = await response.json();
       if (result.image) { setControlNetProcessedPreviewImage(result.image); } else if (result.error) { setPreprocessorPreviewError(result.error); }
@@ -740,7 +740,7 @@ function App() {
   };
   console.log("Frontend payload being sent to WebSocket:", JSON.stringify(payload, null, 2));
   try {
-    const ws = new window.WebSocket("ws://192.168.50.106:8000/api/generate-ws"); 
+    const ws = new window.WebSocket("ws://localhost:8000/api/generate-ws"); 
     ws.onopen = () => { ws.send(JSON.stringify(payload)); };
     ws.onmessage = (event) => {
           const msg = JSON.parse(event.data);
