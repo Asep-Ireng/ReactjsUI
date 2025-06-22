@@ -4,18 +4,20 @@ const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
 const { Pool } = require('pg'); // Import pg
+require('dotenv').config(); // <-- ADD THIS LINE AT THE TOP
 
 const app = express();
 const PORT = 3001;
 
 // --- Database Configuration (Use environment variables in a real app) ---
 const dbPool = new Pool({
-  user: 'postgres', // Replace with your DB user
-  host: 'localhost',
-  database: 'react_ui_ai_db', // Replace with your DB name
-  password: 'root', // Replace with your DB password
-  port: 5432,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_DATABASE,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
 });
+
 dbPool.on('error', (err, client) => {
   console.error('Unexpected error on idle client', err);
   // It's generally recommended to let the application exit or handle this more gracefully
@@ -23,16 +25,12 @@ dbPool.on('error', (err, client) => {
 });
 
 // --- ComfyUI Paths (ensure these are correct) ---
-const COMFYUI_MODELS_CHECKPOINT_PATH =
-  "C:\\Program Files\\Kuliah Rui\\AI\\ComfyUI\\ComfyUI_windows_portable\\ComfyUI\\models\\checkpoints\\thumb";
-const COMFYUI_MODELS_LORA_PATH =
-  "C:\\Program Files\\Kuliah Rui\\AI\\ComfyUI\\ComfyUI_windows_portable\\ComfyUI\\models\\loras";
-const COMFYUI_MODELS_CONTROLNET_PATH =
-  "C:\\Program Files\\Kuliah Rui\\AI\\ComfyUI\\ComfyUI_windows_portable\\ComfyUI\\models\\controlnet";
-const COMFYUI_MODELS_CLIP_VISION_PATH =
-  "C:\\Program Files\\Kuliah Rui\\AI\\ComfyUI\\ComfyUI_windows_portable\\ComfyUI\\models\\clip_vision";
-const PLACEHOLDER_PATH_SEGMENT = "C:\\Path\\To\\Your\\ComfyUI"; // Used to detect unconfigured paths
-
+const COMFYUI_BASE_PATH = process.env.COMFYUI_BASE_PATH;
+const COMFYUI_MODELS_CHECKPOINT_PATH = path.join(COMFYUI_BASE_PATH, 'models', 'checkpoints', 'thumb');
+const COMFYUI_MODELS_LORA_PATH = path.join(COMFYUI_BASE_PATH, 'models', 'loras');
+const COMFYUI_MODELS_CONTROLNET_PATH = path.join(COMFYUI_BASE_PATH, 'models', 'controlnet');
+const COMFYUI_MODELS_CLIP_VISION_PATH = path.join(COMFYUI_BASE_PATH, 'models', 'clip_vision');
+const PLACEHOLDER_PATH_SEGMENT = "R:\\Path\\To\\Your\\ComfyUI"; // This check is now less critical but fine to keep
 app.use(cors());
 
 // Helper function to recursively get files
