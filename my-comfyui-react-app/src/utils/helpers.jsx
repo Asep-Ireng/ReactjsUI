@@ -1,25 +1,6 @@
 import React from "react";
 import { DEFAULT_THUMB_SRC } from "./constants";
 
-
-export function parseApiImageData(data, landscape) {
-  const parts = data.split(",").map((s) => s.trim());
-  if (parts.length < 4) {
-    console.error("Invalid api_image_data format:", data);
-    return { cfg: 7.0, steps: 20, width: 512, height: 768, loops: 1 };
-  }
-  const [cfg, steps, w, h, loops = "1"] = parts;
-  let width = parseInt(w, 10);
-  let height = parseInt(h, 10);
-  return {
-    cfg: parseFloat(cfg),
-    steps: parseInt(steps, 10),
-    width,
-    height,
-    loops: parseInt(loops, 10),
-  };
-}
-
  export const downloadImage = (base64Image, filename = "generated_image.png") => {
       if (!base64Image) { console.error("No image data provided for download."); alert("No image to download!"); return; }
       try { const link = document.createElement('a'); link.href = base64Image; link.download = filename; document.body.appendChild(link); link.click(); document.body.removeChild(link); console.log(`Image download initiated: ${filename}`); } catch (error) { console.error("Error during image download:", error); alert("Failed to initiate image download. See console for details."); }

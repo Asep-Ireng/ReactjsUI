@@ -36,6 +36,8 @@ class GenerateRequest(BaseModel):
     negative_prompt: str
     random_seed: int
     steps: int
+    clipskip: int
+    loops: int
     cfg: float
     width: int
     height: int

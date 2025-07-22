@@ -39,7 +39,12 @@ export const SettingsProvider = ({ children }) => {
   const [localImageGeneratorAddress, setLocalImageGeneratorAddress] =
     useState("127.0.0.1:8188");
   const [batchGenerateRule, setBatchGenerateRule] = useState("Once");
-  const [apiImageData, setApiImageData] = useState("7.0,20,512,768,1");
+  const [cfg, setCfg] = useState(7.0);
+  const [steps, setSteps] = useState(20);
+  const [width, setWidth] = useState(512);
+  const [height, setHeight] = useState(768);
+  const [loops, setLoops] = useState(1);
+  const [clipskip, setClipSkip] = useState(-2);
   const [apiImageLandscape, setApiImageLandscape] = useState(false);
   const [aiPromptInput, setAiPromptInput] = useState("");
   const [promptBan, setPromptBan] = useState(
@@ -79,7 +84,12 @@ export const SettingsProvider = ({ children }) => {
     setSelectedImageGeneratorAPI(appSettings.api_interface || "ComfyUI");
     setLocalImageGeneratorAddress(appSettings.api_addr || "127.0.0.1:8188");
     setBatchGenerateRule(appSettings.batch_generate_rule || "Once");
-    setApiImageData(appSettings.api_image_data || "7.0,20,512,768,1");
+    setCfg(appSettings.cfg || 7.0);
+    setSteps(appSettings.steps || 20);
+    setWidth(appSettings.width || 512);
+    setHeight(appSettings.height || 768);
+    setLoops(appSettings.loops || 1);
+    setClipSkip(appSettings.clipskip || -2);
     setApiImageLandscape(appSettings.api_image_landscape || false);
     setAiPromptInput(appSettings.ai_prompt || "");
     setPromptBan(
@@ -109,7 +119,12 @@ export const SettingsProvider = ({ children }) => {
         api_interface: selectedImageGeneratorAPI,
         api_addr: localImageGeneratorAddress,
         batch_generate_rule: batchGenerateRule,
-        api_image_data: apiImageData,
+        cfg: cfg,
+        steps: steps,
+        width: width,
+        height: height,
+        loops: loops,
+        clipskip: clipskip,
         api_image_landscape: apiImageLandscape,
         ai_prompt: aiPromptInput,
         prompt_ban: promptBan,
@@ -145,7 +160,12 @@ export const SettingsProvider = ({ children }) => {
       selectedImageGeneratorAPI,
       localImageGeneratorAddress,
       batchGenerateRule,
-      apiImageData,
+      cfg,
+      steps,
+      width,
+      height,
+      loops,
+      clipskip,
       apiImageLandscape,
       aiPromptInput,
       promptBan,
@@ -180,7 +200,12 @@ export const SettingsProvider = ({ children }) => {
     selectedImageGeneratorAPI,
     localImageGeneratorAddress,
     batchGenerateRule,
-    apiImageData,
+    cfg,
+    steps,
+    width,
+    height,
+    loops,
+    clipskip,
     apiImageLandscape,
     aiPromptInput,
     promptBan,
@@ -197,7 +222,12 @@ export const SettingsProvider = ({ children }) => {
     setSelectedImageGeneratorAPI,
     setLocalImageGeneratorAddress,
     setBatchGenerateRule,
-    setApiImageData,
+    setCfg,
+    setSteps,
+    setWidth,
+    setHeight,
+    setLoops,
+    setClipSkip,
     setApiImageLandscape,
     setAiPromptInput,
     setPromptBan,

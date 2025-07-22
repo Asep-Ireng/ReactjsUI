@@ -3,7 +3,7 @@ body {
     Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
   margin: 0;
   padding: 0; /* Body has no padding, app-container handles it */
-  background-color: #1a1d23; /* Dark page background */
+  background-color: #000000; /* Dark page background */
   color: #abb2bf; /* Default light text color */
   box-sizing: border-box;
 }
@@ -17,12 +17,12 @@ body {
   max-width: 1920px; /* Generous max-width for large screens */
   min-height: 100vh;
   margin: 0 auto; /* Centers if max-width is active */
-  background-color: #282c34; /* Main app background */
+  background-color: #00225c; /* Main app background */
   padding: 20px;
 }
 
 h1 {
-  color: #61dafb;
+  color: #ffffff;
   text-align: center;
   margin-top: 0;
   margin-bottom: 25px;
@@ -173,19 +173,59 @@ h1 {
 .prompt-section textarea:focus { outline: none; border-color: #61dafb; box-shadow: 0 0 0 2px rgba(97, 218, 251, 0.3); }
 
 /* System Settings Section Specifics */
-.system-settings-section { margin-top: 20px; }
-.system-settings-section .section-header .checkbox-label-header { font-size: 1.2em; }
-.system-settings-section .input-group {
-    flex-basis: calc(50% - 10px);
-    min-width: 250px;
+.system-settings-section {
+  margin-top: 20px;
 }
-.system-settings-section .input-group.full-width-setting {
-    flex-basis: 100%;
-    min-width: unset;
+.system-settings-section .section-header .checkbox-label-header {
+  font-size: 1.2em;
 }
-.system-settings-section .input-group textarea { min-height: 60px; }
-.system-settings-section .checkbox-group label { font-weight: normal; color: #abb2bf; }
 
+/* Default layout for input groups in this section (e.g., dropdowns, text areas) */
+/* This will NOT apply to inputs inside the new .input-grid */
+.system-settings-section .section-content > .input-group {
+  flex-basis: calc(50% - 10px);
+  min-width: 250px;
+}
+
+/* ⭐ --- START: ADDED FOR COMPACT LAYOUT --- ⭐ */
+
+/* This is the new container for CFG, Steps, Width, etc. */
+.system-settings-section .input-grid {
+  display: flex;
+  flex-wrap: wrap;    /* Allows items to wrap to the next line */
+  gap: 15px;          /* Creates space between the grid items */
+  flex-basis: 100%;   /* Make the entire grid container take the full width */
+  min-width: 100%;
+}
+
+/* Styles the small input groups INSIDE the compact grid */
+.system-settings-section .input-grid .input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  /* IMPORTANT: Override the default flex-basis to make them compact */
+  flex-basis: auto;
+  min-width: auto;
+}
+
+/* Sets the specific width for the number inputs in the compact grid */
+.system-settings-section .input-grid .input-group input[type="number"] {
+  width: 70px; /* Overrides the default width: 100% */
+}
+
+/* ⭐ --- END: ADDED FOR COMPACT LAYOUT --- ⭐ */
+
+.system-settings-section .input-group.full-width-setting {
+  flex-basis: 100%;
+  min-width: unset;
+}
+.system-settings-section .input-group textarea {
+  min-height: 60px;
+}
+.system-settings-section .checkbox-group label {
+  font-weight: normal;
+  color: #abb2bf;
+}
 .slider-group-horizontal { display: flex; flex-direction: column; gap: 5px; }
 .slider-group-horizontal label { font-size: 0.9em; color: #98c379; margin-bottom: 3px; }
 .slider-group-horizontal .slider-with-number { display: flex; align-items: center; gap: 10px; }

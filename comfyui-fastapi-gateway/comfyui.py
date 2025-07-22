@@ -79,6 +79,7 @@ class ComfyUIAPIGenerator:
         cn_preprocessor_preview_node_id: Optional[str] = None
         # Initialize final_image_saver_node_id (though not strictly needed for this error, good practice)
         # final_image_saver_node_id: Optional[str] = None 
+        print(f"🐛 [DEBUG] build_workflow received params:\n{json.dumps(params, indent=2)}")
 
         print(f"DEBUG: [{self.client_id}] Building FULL workflow. Params keys: {list(params.keys())}")
 
@@ -88,6 +89,8 @@ class ComfyUIAPIGenerator:
         actual_hf_upscaler = params.get("hf_upscaler") if params.get("hf_upscaler") is not None else "RealESRGAN_x4"
         actual_hf_steps = params.get("hf_steps") if params.get("hf_steps") is not None else 15
         actual_hf_cfg = params.get("hf_cfg") if params.get("hf_cfg") is not None else 7.0
+        params["batch_size"] = params.get("loops")
+
         actual_hf_sampler = params.get("hf_sampler")
         actual_hf_scheduler = params.get("hf_scheduler")
         actual_hf_colortransfer = params.get("hf_colortransfer", "none")
@@ -101,12 +104,14 @@ class ComfyUIAPIGenerator:
         actual_cn_canny_resolution = params.get("cn_canny_resolution") if params.get("cn_canny_resolution") is not None else 192
         
         actual_clipvision_strength = params.get("clipvision_strength") if params.get("clipvision_strength") is not None else 1.0
-        actual_clipskip=params.get("clipskip") if params.get("clipskip") is not None else 0
 
         actual_output_filename_format = params.get("output_filename_format") if params.get("output_filename_format") is not None else "%time_%seed"
         actual_output_path_format = params.get("output_path_format") if params.get("output_path_format") is not None else "%date"
         actual_sampler_name_main_pass_for_saver = params.get("sampler_name_main_pass_for_saver") if params.get("sampler_name_main_pass_for_saver") is not None else params["sampler_name"]
         actual_scheduler_main_pass_for_saver = params.get("scheduler_main_pass_for_saver") if params.get("scheduler_main_pass_for_saver") is not None else params["scheduler"]
+        
+        #print debug info
+
         # --- End Parameter Defaulting ---
 
         # 1. Checkpoint Loader
@@ -132,10 +137,21 @@ class ComfyUIAPIGenerator:
                     "model": current_model_ref, "clip": current_clip_ref,
                 }, f"Load LoRA: {os.path.basename(lora_name)}")
                 current_model_ref, current_clip_ref = [lora_loader_id, 0], [lora_loader_id, 1]
+                
+      
+        #print(f"DEBUG: [{self.client_id}] Applying CLIPSkip: {params['clipskip']}")
         
+        clip_skip_node_id, _ = self._add_node("CLIPSetLastLayer", 
+            {"clip": current_clip_ref,"stop_at_clip_layer": params['clipskip']}
+        )
+        clip_skip_positive = [clip_skip_node_id, 0]
+                
+                
+                
+                
         # 3. Base Text Prompts
         pos_text_encode_id, base_pos_cond_ref = self._add_node("CLIPTextEncode", {
-            "text": params["positive_prompt"], "clip": current_clip_ref
+            "text": params["positive_prompt"], "clip": clip_skip_positive
         }, "Base Positive Encode")
         neg_text_encode_id, base_neg_cond_ref = self._add_node("CLIPTextEncode", {
             "text": params["negative_prompt"], "clip": current_clip_ref
@@ -244,13 +260,13 @@ class ComfyUIAPIGenerator:
         if latent_for_ksampler_ref is None:
             print(f"DEBUG: [{self.client_id}] Normal Latent Path (No CLIPVision).")
             canvas_inputs = {
-                "Width": params["width"], "Height": params["height"], "Batch": 1,
+                "Width": params["width"], "Height": params["height"], "Batch": params.get("batch_size"),
                 "Landscape": params.get("api_image_landscape", False),
                 "HiResMultiplier": actual_hf_scale
             }
             canvas_node_id, _ = self._add_node("CanvasCreatorAdvanced", canvas_inputs, "Create Canvas Advanced")
             empty_latent_id, latent_for_ksampler_ref = self._add_node("EmptyLatentImage", {
-                "width": [canvas_node_id, 0], "height": [canvas_node_id, 1], "batch_size": 1
+                "width": [canvas_node_id, 0], "height": [canvas_node_id, 1], "batch_size": [canvas_node_id, 2],
             }, "Empty Latent Image")
 
         if latent_for_ksampler_ref is None: raise ValueError("Latent for KSampler is None after all checks.")
@@ -316,7 +332,7 @@ class ComfyUIAPIGenerator:
             "seed_value": params["random_seed"],
             "width": params["width"], "height": params["height"],
             "lossless_webp": True, "quality_jpeg_or_webp": 100, "optimize_png": False, "counter": 0,
-            "denoise": 1.0, "clip_skip": -2, "time_format": "%Y-%m-%d-%H%M%S",
+            "denoise": 1.0, "clip_skip": params.get("clipskip"), "time_format": "%Y-%m-%d-%H%M%S",
             "save_workflow_as_json": False, "embed_workflow": True,
             "additional_hashes": "", "download_civitai_data": True, "easy_remix": True
         }

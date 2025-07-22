@@ -3,7 +3,6 @@ import md5 from "md5";
 import { useDataContext } from "./DataContext.jsx";
 import { useSettingsContext } from "./SettingsContext.jsx";
 import { generatePromptFromAI } from "../services/aiPromptService";
-import { parseApiImageData } from "../utils/helpers.jsx";
 import { LANG, DEFAULT_THUMB_SRC } from "../utils/constants";
 
 const GenerationContext = createContext();
@@ -34,7 +33,12 @@ export const GenerationProvider = ({ children }) => {
     promptBan,
     aiPromptInput,
     localImageGeneratorAddress,
-    apiImageData,
+    cfg,
+    steps,
+    width,
+    height,
+    loops,
+    clipskip,
     apiImageLandscape,
   } = useSettingsContext();
 
@@ -129,13 +133,14 @@ export const GenerationProvider = ({ children }) => {
   const [denoisingStrengthHires, setDenoisingStrengthHires] = useState(0.4);
   const [hfSteps, setHfSteps] = useState(15);
   const [hfCfg, setHfCfg] = useState(7.0);
+ 
   const [hfSampler, setHfSampler] = useState("");
   const [hfScheduler, setHfScheduler] = useState("");
 
   // Effect to populate generation UI from loaded settings
   useEffect(() => {
     if (!appSettings) return;
-
+  console.log("appSettings", appSettings);
     setPromptText(appSettings.custom_prompt || "");
     setPositivePromptTail(
       appSettings.api_prompt || "masterpiece, best quality, amazing quality"
@@ -463,12 +468,6 @@ export const GenerationProvider = ({ children }) => {
     ].filter(Boolean);
     const finalCombinedPrompt = promptParts.join(", ");
     setFinalPromptDisplay(finalCombinedPrompt);
-    const {
-      cfg: baseCfg,
-      steps: baseSteps,
-      width: baseWidth,
-      height: baseHeight,
-    } = parseApiImageData(apiImageData, apiImageLandscape);
 
     let model_name_for_payload = selectedModel;
     let normalizedSelectedModel = selectedModel.replace(/\\/g, "/");
@@ -483,7 +482,7 @@ export const GenerationProvider = ({ children }) => {
     }
 
     setInformationDisplay(
-      `Model: ${model_name_for_payload}\nSeed: ${seed}\nSampler: ${selectedSampler} / Scheduler: ${selectedScheduler}\nDimensions: ${baseWidth}x${baseHeight}\nSteps: ${baseSteps}, CFG: ${baseCfg}\nHi-res Fix: ${
+      `Model: ${model_name_for_payload}\nSeed: ${seed}\nClipSkip: ${clipskip}\nSampler: ${selectedSampler} / Scheduler: ${selectedScheduler}\nDimensions: ${width}x${height}\nSteps: ${steps}, CFG: ${cfg}\nHi-res Fix: ${
         enableHiresFix
           ? `Enabled (Upscaler: ${selectedUpscaler}, Up By: ${upscaleBy.toFixed(1)}, Denoise: ${denoisingStrengthHires.toFixed(5)}, Steps: ${hfSteps}, CFG: ${hfCfg})`
           : "Disabled"
@@ -502,7 +501,7 @@ export const GenerationProvider = ({ children }) => {
     setCurrentPreviewImage(null);
     setGenerationError(null);
     setGenerationProgress(0);
-    setCurrentSteps(baseSteps + (enableHiresFix ? hfSteps : 0));
+    setCurrentSteps(steps + (enableHiresFix ? hfSteps : 0));
     setControlNetProcessedPreviewImage(null);
 
     const payload = {
@@ -511,10 +510,12 @@ export const GenerationProvider = ({ children }) => {
       positive_prompt: finalCombinedPrompt,
       negative_prompt: negativePromptText,
       random_seed: seed === "-1" || seed === "" ? -1 : parseInt(seed, 10),
-      steps: baseSteps,
-      cfg: baseCfg,
-      width: baseWidth,
-      height: baseHeight,
+      steps: steps,
+      cfg: cfg,
+      width: width,
+      height: height,
+      loops: loops,
+      clipskip: clipskip,
       api_image_landscape: apiImageLandscape,
       sampler_name: selectedSampler,
       scheduler: selectedScheduler,
@@ -544,6 +545,7 @@ export const GenerationProvider = ({ children }) => {
       hf_sampler: enableHiresFix && hfSampler ? hfSampler : null,
       hf_scheduler: enableHiresFix && hfScheduler ? hfScheduler : null,
     };
+    console.log("payload →", payload);
 
     try {
       const ws = new window.WebSocket("ws://localhost:8000/api/generate-ws");
