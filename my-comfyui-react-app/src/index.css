@@ -1,68 +1,71 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  /* — Font & Base — */
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+  /* — Dark Cozy Theme (Refined) — */
+  --bg-color-main:            #2a282e;  /* deep coffee brown */
+  --bg-color-panel:           #3a3532;  /* slightly lighter panels */
+  --bg-color-inset:           #423d3a;  /* inputs, insets */
+  --text-color-main:          #e9e3de;  /* soft off-white */
+  --text-color-headings:      #ffffff;  /* pure white for contrast */
+  --text-color-accent:        #d9b25c;  /* warm muted gold for labels */
+  --border-color:             #504c4a;  /* dark gray-brown borders */
+
+  /* — Accent Colors — */
+  --accent-color-primary:        #f18f1c;  /* vivid orange */
+  --accent-color-primary-hover:  #d17314;  /* deeper on hover */
+  --accent-color-secondary:      #6e5e50;  /* neutral brown-gray */
+  --accent-color-secondary-hover:#5a5047;  /* darker on hover */
+  --accent-color-success:        #8fbf87;  /* soft green */
+  --accent-color-error:          #e06c75;  /* gentle red */
+
+  /* — Derived UI variables — */
+  --input-bg:              var(--bg-color-inset);
+  --input-border:          var(--border-color);
+  --input-focus-border:    var(--accent-color-primary);
+  --button-primary-bg:     var(--accent-color-primary);
+  --button-primary-text:   var(--text-color-headings);
+  --button-secondary-bg:   var(--accent-color-secondary);
+  --button-secondary-text: var(--text-color-headings);
+
+  /* — Glassmorphism tokens — */
+  --glass-bg:       rgba(255, 255, 255, 0.06);
+  --glass-border:   rgba(255, 255, 255, 0.18);
+  --glass-blur:     blur(12px);
+
+  /* — Gradient tokens — */
+  --gradient-bg:            linear-gradient(135deg, #2e2a28, #3a3532);
+  --gradient-glass:         linear-gradient(to bottom right, rgba(255,255,255,0.12), rgba(255,255,255,0.02));
+  --gradient-btn-primary:   linear-gradient(45deg, var(--accent-color-primary), var(--accent-color-primary-hover));
+  --gradient-btn-secondary: linear-gradient(45deg, var(--accent-color-secondary), var(--accent-color-secondary-hover));
 }
 
 body {
   margin: 0;
-  /* display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh; */
+  background: var(--gradient-bg);
+  color: var(--text-color-main);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
+/* Remove the default light/dark mode from Vite */
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    /* You could define a light theme here if needed, but for now, we stick to dark */
   }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+}
+
+/* Glass utility */
+.glass-panel {
+  background-image: var(--gradient-glass), var(--glass-bg);
+  background-blend-mode: overlay;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
 }

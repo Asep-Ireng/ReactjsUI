@@ -5,6 +5,7 @@ import { GenerationProvider, useGenerationContext } from "./context/GenerationCo
 import ControlPanel from "./components/ControlPanel.jsx";
 import OutputPanel from "./components/OutputPanel.jsx";
 import ImageModal from "./components/ImageModal.jsx";
+import ModelRail from "./components/ModelRail.jsx";
 import "./App.css";
 
 // The main app content, which can now consume any of the contexts
@@ -31,8 +32,9 @@ const AppContent = () => {
   return (
     <div className="app-container">
       <div className="main-layout">
-        <ControlPanel />
+        <ModelRail />
         <OutputPanel />
+         <ControlPanel />
       </div>
       {isModalOpen && (
         <ImageModal src={modalImageSrc} onClose={() => setIsModalOpen(false)} />

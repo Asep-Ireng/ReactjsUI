@@ -5,7 +5,6 @@ import { LANG } from "../utils/constants";
 import { downloadImage } from "../utils/helpers";
 
 const OutputPanel = () => {
-  // --- Data from GenerationContext (changes frequently) ---
   const {
     isGenerating,
     currentPreviewImage,
@@ -19,10 +18,8 @@ const OutputPanel = () => {
     setIsModalOpen,
   } = useGenerationContext();
 
-  // --- Data from SettingsContext (changes infrequently) ---
   const { aiSystemPrompt, setAiSystemPrompt } = useSettingsContext();
 
-  // The handler for the system prompt textarea now comes from the SettingsContext
   const handleAiSystemPromptChange = (e) => {
     setAiSystemPrompt(e.target.value);
   };
@@ -39,27 +36,20 @@ const OutputPanel = () => {
                 className="generating-preview-image"
               />
             )}
+
             <div
-              className="progress-bar-container"
-              style={
-                currentPreviewImage
-                  ? {
-                      position: "absolute",
-                      bottom: "10px",
-                      left: "10px",
-                      right: "10px",
-                      backgroundColor: "rgba(0,0,0,0.5)",
-                    }
-                  : {}
-              }
+              className={`progress-bar-container ${
+                currentPreviewImage ? "progress-bar-container-overlaid" : ""
+              }`}
             >
               <div
                 className="progress-bar"
                 style={{ width: `${generationProgress}%` }}
               ></div>
               <div
-                className="progress-bar-label"
-                style={currentPreviewImage ? { color: "#fff" } : {}}
+                className={`progress-bar-label ${
+                  currentPreviewImage ? "progress-bar-label-overlaid" : ""
+                }`}
               >
                 {generationProgress < 100
                   ? `Step ${Math.max(
@@ -71,15 +61,14 @@ const OutputPanel = () => {
             </div>
           </div>
         )}
+
         {!isGenerating && generatedImage && (
           <div className="output-gallery-container">
             <img
               src={generatedImage}
               alt="Generated result"
               className="generated-image-display"
-              style={{ cursor: "zoom-in" }}
               onClick={() => {
-                // These functions are from GenerationContext
                 setModalImageSrc(generatedImage);
                 setIsModalOpen(true);
               }}
@@ -89,24 +78,27 @@ const OutputPanel = () => {
                 downloadImage(generatedImage, `comfy_gen_${Date.now()}.png`)
               }
               className="action-button download-button"
-              style={{ marginTop: "10px", width: "100%" }}
             >
               Download Image (PNG)
             </button>
           </div>
         )}
+
         {!isGenerating && !generatedImage && !generationError && (
           <div className="output-gallery-placeholder">
             <span className="gallery-icon">🖼️</span>
             {LANG.outputGalleryPlaceholder}
           </div>
         )}
+
         {generationError && !isGenerating && (
           <div className="output-gallery-placeholder error-state">
-            <span className="gallery-icon">⚠️</span>Error: {generationError}
+            <span className="gallery-icon">⚠️</span>
+            Error: {generationError}
           </div>
         )}
       </div>
+
       <div className="output-info-section">
         <label htmlFor="finalPromptDisplay">{LANG.output_prompt}:</label>
         <textarea
@@ -116,6 +108,7 @@ const OutputPanel = () => {
           rows={6}
         />
       </div>
+
       <div className="output-info-section">
         <label htmlFor="informationDisplay">{LANG.output_info}:</label>
         <textarea
@@ -125,14 +118,15 @@ const OutputPanel = () => {
           rows={4}
         />
       </div>
+
       <div className="output-info-section">
         <label htmlFor="aiSystemPromptEditable">
           {LANG.ai_system_prompt_text}:
         </label>
         <textarea
           id="aiSystemPromptEditable"
-          value={aiSystemPrompt} // From SettingsContext
-          onChange={handleAiSystemPromptChange} // Handler from SettingsContext
+          value={aiSystemPrompt}
+          onChange={handleAiSystemPromptChange}
           rows={8}
         />
       </div>
@@ -140,4 +134,10 @@ const OutputPanel = () => {
   );
 };
 
-export default OutputPanel;
+export default function OutputPanel() {
+  return (
+    <section className="preview-panel glass-panel">
+      {/* keep your existing output-gallery-container and info sections */}
+    </section>
+  );
+}

@@ -16,9 +16,17 @@ const LoraSection = () => {
     handleLoraChange,
     handleRemoveLora,
     setModalImageSrc,
+    setIsModalOpen,
   } = useGenerationContext();
 
   const loraSelectComponents = { SingleValue: formatSingleValueWithThumbnail };
+
+  const handleImageClick = (src) => {
+    if (src && src !== DEFAULT_THUMB_SRC) {
+      setModalImageSrc(src);
+      setIsModalOpen(true);
+    }
+  };
 
   return (
     <div className="section lora-section">
@@ -48,9 +56,7 @@ const LoraSection = () => {
                 src={lora.thumbnail || DEFAULT_THUMB_SRC}
                 alt={lora.name}
                 className="lora-thumbnail image-preview small-preview"
-                onClick={() => {
-                  setModalImageSrc(lora.thumbnail || DEFAULT_THUMB_SRC);
-                }}
+                onClick={() => handleImageClick(lora.thumbnail)}
                 style={{
                   cursor: "zoom-in",
                   marginRight: "10px",

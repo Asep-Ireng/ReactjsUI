@@ -3,16 +3,7 @@ import Select from "react-select";
 import { useGenerationContext } from "../context/GenerationContext.jsx";
 import { useDataContext } from "../context/DataContext.jsx";
 import { useSettingsContext } from "../context/SettingsContext.jsx";
-import {
-  LANG,
-  selectStyles,
-  MAX_SEED,
-  DEFAULT_THUMB_SRC,
-} from "../utils/constants";
-import {
-  formatOptionWithThumbnail,
-  formatSingleValueWithThumbnail,
-} from "../utils/helpers.jsx";
+import { LANG, selectStyles, MAX_SEED, DEFAULT_THUMB_SRC } from "../utils/constants";
 import LoraSection from "./LoraSection.jsx";
 import ControlNetSection from "./ControlNetSection.jsx";
 import HiresFixSection from "./HiresFixSection.jsx";
@@ -20,11 +11,9 @@ import ClipVisionSection from "./ClipVisionSection.jsx";
 import SystemSettingsSection from "./SystemSettingsSection.jsx";
 
 const ControlPanel = () => {
-  // --- Data from DataContext (Static lists and data) ---
   const {
     characterDropdownOptions,
     actionOptions,
-    modelDropdownOptions,
     samplerOptions,
     schedulerOptions,
     mergedThumbData,
@@ -32,12 +21,9 @@ const ControlPanel = () => {
     getCharacterDisplayData,
   } = useDataContext();
 
-  // --- Data from SettingsContext (System-wide settings) ---
   const { selectedAIPromptGenerator } = useSettingsContext();
 
-  // --- Data from GenerationContext (Active UI state and handlers) ---
   const {
-    // State
     promptText,
     positivePromptTail,
     negativePromptText,
@@ -52,8 +38,6 @@ const ControlPanel = () => {
     character3ThumbSrc,
     enableAction,
     selectedAction,
-    selectedModel,
-    selectedModelPreviewThumb,
     seed,
     selectedSampler,
     samplerDescription,
@@ -62,7 +46,6 @@ const ControlPanel = () => {
     hoveredCharacterPreviewSrc,
     isGeneratingAIPrompt,
     aiGenerationError,
-    // Setters & Handlers
     setPromptText,
     setPositivePromptTail,
     setNegativePromptText,
@@ -71,7 +54,6 @@ const ControlPanel = () => {
     setSelectedCharacter3,
     setEnableAction,
     setSelectedAction,
-    setSelectedModel,
     setSeed,
     setSelectedSampler,
     setSelectedScheduler,
@@ -82,15 +64,10 @@ const ControlPanel = () => {
     handleAIPromptGenerate,
   } = useGenerationContext();
 
-  // --- THIS IS THE FIX ---
-  // This component is defined inside ControlPanel, so it has access to its scope.
-  // We don't need to pass props to it. It can see the variables directly.
   const SelectOptionWithHoverPreview = (props) => {
-    // The 'data' prop is passed by react-select itself.
     const { data } = props;
 
     const handleMouseEnter = () => {
-      // Now we use the functions and data from the parent scope (ControlPanel).
       if (
         data.value &&
         data.value !== "random" &&
@@ -109,9 +86,7 @@ const ControlPanel = () => {
       }
     };
 
-    const handleMouseLeave = () => {
-      setHoveredCharacterPreviewSrc(null);
-    };
+    const handleMouseLeave = () => setHoveredCharacterPreviewSrc(null);
 
     return (
       <div
@@ -134,7 +109,6 @@ const ControlPanel = () => {
     );
   };
 
-  // --- Local derived values for this component ---
   const currentSliderValue =
     seed === "-1" || seed === "" || isNaN(parseInt(seed)) || parseInt(seed) < 0
       ? "0"
@@ -150,11 +124,10 @@ const ControlPanel = () => {
   const handleThumbnailClick = (src) => {
     if (src && src !== DEFAULT_THUMB_SRC) {
       setModalImageSrc(src);
-      setIsModalOpen(true); // You forgot to open the modal
+      setIsModalOpen(true);
     }
   };
 
-  // Find the correct object for the Select component's `value` prop
   const findSelectValue = (selectedValue, resolvedValue, options) => {
     const valueToFind =
       selectedValue === "random" && resolvedValue ? resolvedValue : selectedValue;
@@ -176,12 +149,11 @@ const ControlPanel = () => {
     resolvedCharacter3Tags,
     characterDropdownOptions
   );
-  const modelSelectValue =
-    modelDropdownOptions.find((opt) => opt.value === selectedModel) || null;
 
   return (
     <div className="control-panel">
       <h1>My ComfyUI Frontend</h1>
+
       {hoveredCharacterPreviewSrc && (
         <div className="hover-preview-container">
           <img
@@ -192,17 +164,16 @@ const ControlPanel = () => {
         </div>
       )}
 
-<div className="input-row">
+      <div className="input-row">
         <div className="input-group">
           <label htmlFor="character-list-1">{LANG.character1}:</label>
           <Select
             id="character-list-1"
             options={characterDropdownOptions}
             value={char1SelectValueObject}
-            // --- THIS IS THE FIX ---
             onChange={(opt) => {
               setSelectedCharacter1(opt ? opt.value : "none");
-              setHoveredCharacterPreviewSrc(null); // Explicitly clear the preview on selection
+              setHoveredCharacterPreviewSrc(null);
             }}
             styles={selectStyles}
             placeholder="Search/select..."
@@ -210,17 +181,16 @@ const ControlPanel = () => {
             components={{ Option: SelectOptionWithHoverPreview }}
           />
         </div>
-        {/* Repeat for character 2 and 3 */}
+
         <div className="input-group">
           <label htmlFor="character-list-2">{LANG.character2}:</label>
           <Select
             id="character-list-2"
             options={characterDropdownOptions}
             value={char2SelectValueObject}
-            // --- THIS IS THE FIX ---
             onChange={(opt) => {
               setSelectedCharacter2(opt ? opt.value : "none");
-              setHoveredCharacterPreviewSrc(null); // Explicitly clear the preview on selection
+              setHoveredCharacterPreviewSrc(null);
             }}
             styles={selectStyles}
             placeholder="Search/select..."
@@ -228,16 +198,16 @@ const ControlPanel = () => {
             components={{ Option: SelectOptionWithHoverPreview }}
           />
         </div>
+
         <div className="input-group">
           <label htmlFor="character-list-3">{LANG.character3}:</label>
           <Select
             id="character-list-3"
             options={characterDropdownOptions}
             value={char3SelectValueObject}
-            // --- THIS IS THE FIX ---
             onChange={(opt) => {
               setSelectedCharacter3(opt ? opt.value : "none");
-              setHoveredCharacterPreviewSrc(null); // Explicitly clear the preview on selection
+              setHoveredCharacterPreviewSrc(null);
             }}
             styles={selectStyles}
             placeholder="Search/select..."
@@ -245,6 +215,7 @@ const ControlPanel = () => {
             components={{ Option: SelectOptionWithHoverPreview }}
           />
         </div>
+
         <div className="input-group action-group">
           <div className="checkbox-group">
             <input
@@ -270,39 +241,9 @@ const ControlPanel = () => {
           )}
         </div>
       </div>
+
+      {/* Model dropdown removed. Seed stays alone in this row. */}
       <div className="input-row">
-        <div className="input-group model-selection-group">
-          <label htmlFor="ml">{LANG.api_model_file_select}:</label>
-          {selectedModel &&
-            selectedModelPreviewThumb &&
-            selectedModelPreviewThumb !== DEFAULT_THUMB_SRC && (
-              <div
-                className="model-preview-card"
-                onClick={() => handleThumbnailClick(selectedModelPreviewThumb)}
-                style={{ cursor: "zoom-in" }}
-              >
-                <img
-                  src={selectedModelPreviewThumb}
-                  alt={modelSelectValue?.label || selectedModel}
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = DEFAULT_THUMB_SRC;
-                  }}
-                />
-              </div>
-            )}
-          <Select
-            id="ml"
-            value={modelSelectValue}
-            onChange={(opt) => setSelectedModel(opt ? opt.value : "")}
-            options={modelDropdownOptions}
-            styles={selectStyles}
-            placeholder={LANG.selectModelPlaceholder}
-            formatOptionLabel={formatOptionWithThumbnail}
-            components={{ SingleValue: formatSingleValueWithThumbnail }}
-            isClearable={false}
-          />
-        </div>
         <div className="input-group seed-group">
           <label htmlFor="rs">{LANG.random_seed}:</label>
           <div className="seed-input-container">
@@ -322,6 +263,7 @@ const ControlPanel = () => {
               &#x21BB;
             </button>
           </div>
+
           <input
             type="range"
             min="0"
@@ -330,6 +272,7 @@ const ControlPanel = () => {
             onChange={(e) => setSeed(e.target.value)}
             className="seed-slider"
           />
+
           <div className="seed-range-labels">
             <span>0</span>
             <span>
@@ -343,6 +286,7 @@ const ControlPanel = () => {
           </div>
         </div>
       </div>
+
       <div className="input-row">
         <div className="input-group">
           <label htmlFor="sl">{LANG.api_sampling_method}:</label>
@@ -358,11 +302,13 @@ const ControlPanel = () => {
             ))}
           </select>
         </div>
+
         <div className="input-group description-group">
           <label htmlFor="sd">{LANG.samplerDescriptionLabel}:</label>
           <textarea id="sd" value={samplerDescription} readOnly rows={2} />
         </div>
       </div>
+
       <div className="input-row">
         <div className="input-group">
           <label htmlFor="schl">{LANG.api_scheduler}:</label>
@@ -378,11 +324,13 @@ const ControlPanel = () => {
             ))}
           </select>
         </div>
+
         <div className="input-group description-group">
           <label htmlFor="schd">{LANG.schedulerDescriptionLabel}:</label>
           <textarea id="schd" value={schedulerDescription} readOnly rows={2} />
         </div>
       </div>
+
       <div className="input-row">
         <div className="input-group thumb-gallery-group">
           <label>{LANG.thumbImageGalleryLabel}:</label>
@@ -415,10 +363,7 @@ const ControlPanel = () => {
       <HiresFixSection />
 
       <div className="action-buttons-container">
-        <button
-          onClick={handleCreatePrompt}
-          className="action-button primary"
-        >
+        <button onClick={handleCreatePrompt} className="action-button primary">
           {LANG.run_button}
         </button>
         <button
@@ -434,6 +379,7 @@ const ControlPanel = () => {
           {LANG.run_same_button}
         </button>
       </div>
+
       <div className="prompt-section">
         <label htmlFor="cp">{LANG.custom_prompt}:</label>
         <textarea
@@ -443,19 +389,19 @@ const ControlPanel = () => {
           rows={4}
         />
       </div>
+
       <button
         onClick={handleAIPromptGenerate}
         disabled={isGeneratingAIPrompt || selectedAIPromptGenerator === "none"}
-        className="action-button"
-        style={{ marginTop: "5px", marginBottom: "10px" }}
+        className="action-button ai-generate-button"
       >
         {isGeneratingAIPrompt ? "Generating..." : "Generate with AI"}
       </button>
+
       {aiGenerationError && (
-        <p style={{ color: "red", fontSize: "0.9em" }}>
-          Error: {aiGenerationError}
-        </p>
+        <p className="error-message">Error: {aiGenerationError}</p>
       )}
+
       <div className="prompt-section">
         <label htmlFor="ppt">{LANG.api_prompt}:</label>
         <textarea
@@ -465,6 +411,7 @@ const ControlPanel = () => {
           rows={2}
         />
       </div>
+
       <div className="prompt-section">
         <label htmlFor="np">{LANG.api_neg_prompt}:</label>
         <textarea
