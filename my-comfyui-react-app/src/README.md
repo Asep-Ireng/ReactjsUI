@@ -12,6 +12,18 @@ The application consists of three main parts:
 
 Communication between the React frontend and the FastAPI gateway is handled via WebSockets, allowing for real-time updates.
 
+## Features
+
+### AI Prompt Generator
+
+This application includes a feature to automatically generate creative prompts using an AI service. To use this feature, you must configure your API key.
+
+**Configuration:**
+
+1.  Open the application in your browser.
+2.  Navigate to the **System Settings** section.
+3.  Enter your API key for the AI prompt generation service in the designated field.
+
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
