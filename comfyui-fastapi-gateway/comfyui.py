@@ -271,11 +271,12 @@ class ComfyUIAPIGenerator:
 
         if latent_for_ksampler_ref is None: raise ValueError("Latent for KSampler is None after all checks.")
         steps_cfg_node_id, _ = self._add_node("StepsAndCfg", {"steps": params["steps"], "cfg": params["cfg"]}, "Steps & Cfg (Main)")
+       
         main_ksampler_id, main_ksampler_latent_out_ref = self._add_node("KSampler", {
             "model": current_model_ref, "positive": final_positive_for_ksampler, "negative": final_negative_for_ksampler,
             "latent_image": latent_for_ksampler_ref, "seed": params["random_seed"],
             "steps": [steps_cfg_node_id, 0], "cfg": [steps_cfg_node_id, 1],
-            "sampler_name": params["sampler_name"], "scheduler": params["scheduler"], "denoise": 1.0
+            "sampler_name": params["sampler_name"], "scheduler": params["scheduler"], "denoise": params["denoise"]
         }, "KSampler (Main)")
         initial_decode_id, initial_pixels_ref = self._add_node("VAEDecode", {
             "samples": main_ksampler_latent_out_ref, "vae": base_vae_ref

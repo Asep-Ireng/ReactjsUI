@@ -5,7 +5,7 @@ import { GenerationProvider, useGenerationContext } from "./context/GenerationCo
 import ControlPanel from "./components/ControlPanel.jsx";
 import OutputPanel from "./components/OutputPanel.jsx";
 import ImageModal from "./components/ImageModal.jsx";
-import ModelRail from "./components/ModelRail.jsx";
+import ModelRail from "./components/modelrail.jsx";
 import "./App.css";
 
 // The main app content, which can now consume any of the contexts

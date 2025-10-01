@@ -134,10 +134,11 @@ const OutputPanel = () => {
   );
 };
 
-export default function OutputPanel() {
-  return (
-    <section className="preview-panel glass-panel">
-      {/* keep your existing output-gallery-container and info sections */}
-    </section>
-  );
-}
+export default OutputPanel;
+
+
+  // return (
+  //   <section className="preview-panel glass-panel">
+  //     {/* keep your existing output-gallery-container and info sections */}
+  //   </section>
+  // );

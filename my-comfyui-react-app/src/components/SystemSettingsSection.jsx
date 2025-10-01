@@ -25,6 +25,7 @@ const SystemSettingsSection = () => {
     height, setHeight,
     loops, setLoops,
     clipskip, setClipSkip,
+    denoise, setDenoise,
     apiImageLandscape, setApiImageLandscape,
     aiPromptInput, setAiPromptInput,
     promptBan, setPromptBan,
@@ -126,6 +127,13 @@ const SystemSettingsSection = () => {
           <div className="slider-with-number">
             <input type="range" id="clipSkip" min="-12" max="-1" step="1" value={clipskip} onChange={(e) => setClipSkip(parseInt(e.target.value, 10))} />
             <input type="number" value={clipskip} onChange={(e) => setClipSkip(parseInt(e.target.value, 10))} min="-12" max="-1" className="slider-number-input" />
+          </div>
+        </div>
+          <div className="input-group slider-group-horizontal">
+          <label htmlFor="denoise">Denoise: {denoise}</label>
+          <div className="slider-with-number">
+            <input type="range" id="denoise" min="0" max="1.0" step="0.1" value={denoise} onChange={(e) => setDenoise(parseFloat(e.target.value, 10))} />
+            <input type="number" value={denoise} onChange={(e) => setDenoise(parseFloat(e.target.value, 10))} min="0" max="1.0" className="slider-number-input" />
           </div>
         </div>
         </div>

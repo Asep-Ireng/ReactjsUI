@@ -43,6 +43,7 @@ export const SettingsProvider = ({ children }) => {
   const [steps, setSteps] = useState(20);
   const [width, setWidth] = useState(512);
   const [height, setHeight] = useState(768);
+  const [denoise, setDenoise] = useState(1.0);
   const [loops, setLoops] = useState(1);
   const [clipskip, setClipSkip] = useState(-2);
   const [apiImageLandscape, setApiImageLandscape] = useState(false);
@@ -88,6 +89,7 @@ export const SettingsProvider = ({ children }) => {
     setSteps(appSettings.steps || 20);
     setWidth(appSettings.width || 512);
     setHeight(appSettings.height || 768);
+    setDenoise(appSettings.denoise || 1.0);
     setLoops(appSettings.loops || 1);
     setClipSkip(appSettings.clipskip || -2);
     setApiImageLandscape(appSettings.api_image_landscape || false);
@@ -124,6 +126,7 @@ export const SettingsProvider = ({ children }) => {
         width: width,
         height: height,
         loops: loops,
+        denoise: denoise,
         clipskip: clipskip,
         api_image_landscape: apiImageLandscape,
         ai_prompt: aiPromptInput,
@@ -166,6 +169,7 @@ export const SettingsProvider = ({ children }) => {
       height,
       loops,
       clipskip,
+      denoise,
       apiImageLandscape,
       aiPromptInput,
       promptBan,
@@ -203,6 +207,7 @@ export const SettingsProvider = ({ children }) => {
     cfg,
     steps,
     width,
+    denoise,
     height,
     loops,
     clipskip,
@@ -228,6 +233,7 @@ export const SettingsProvider = ({ children }) => {
     setHeight,
     setLoops,
     setClipSkip,
+    setDenoise,
     setApiImageLandscape,
     setAiPromptInput,
     setPromptBan,

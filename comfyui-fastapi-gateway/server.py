@@ -39,6 +39,7 @@ class GenerateRequest(BaseModel):
     clipskip: int
     loops: int
     cfg: float
+    denoise: float
     width: int
     height: int
     sampler_name: str
