@@ -1,12 +1,46 @@
-# React + Vite
+# My ComfyUI Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, React-based frontend for interacting with ComfyUI, designed for a streamlined and aesthetic user experience. This application features a custom control panel, character selection, and advanced generation settings.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+-   **Modern UI**: Built with **React 19** and **Tailwind CSS** for a sleek, dark-themed interface.
+-   **Resizable Layout**: customizable workspace with resizable panels for the Model Rail, Output Preview, and Control Panel.
+-   **Character Selection**: Visual character selection with thumbnail previews.
+-   **Advanced Generation Settings**:
+    -   **Sticky Prompt Header**: Always-visible prompt input with dynamic transparency.
+    -   **Resolution Templates**: Quick-select buttons for common resolutions (HD, Full HD, etc.) with aspect ratio preview.
+    -   **ControlNet & LoRA**: Dedicated sections for managing LoRA models and ControlNet settings.
+    -   **Hires Fix**: Integrated High-Res Fix settings.
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+-   **Frontend Framework**: [React](https://react.dev/)
+-   **Build Tool**: [Vite](https://vitejs.dev/)
+-   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+-   **Layout**: [react-resizable-panels](https://github.com/bvaughn/react-resizable-panels)
+-   **Icons**: [Lucide React](https://lucide.dev/)
+
+## Setup & Installation
+
+1.  **Install Dependencies**:
+    ```bash
+    npm install
+    ```
+
+2.  **Run Development Server**:
+    ```bash
+    npm run dev
+    ```
+
+3.  **Build for Production**:
+    ```bash
+    npm run build
+    ```
+
+## Project Structure
+
+-   `src/components/`: Reusable UI components (ControlPanel, ModelRail, etc.).
+-   `src/context/`: React Context for state management (GenerationContext, SettingsContext).
+-   `src/utils/`: Utility functions and constants.
+-   `src/App.jsx`: Main application layout and routing.
