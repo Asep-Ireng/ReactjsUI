@@ -102,12 +102,7 @@ const SystemSettingsSection = () => {
           </select>
         </div>
 
-        <div className="input-group">
-          <div className="checkbox-group" style={{ marginTop: "10px" }}>
-            <input type="checkbox" id="apiImageLandscape" checked={apiImageLandscape} onChange={(e) => setApiImageLandscape(e.target.checked)} />
-            <label htmlFor="apiImageLandscape">{LANG.api_image_landscape}</label>
-          </div>
-        </div>
+
         <div className="input-group">
           <label htmlFor="aiPromptInput">{LANG.ai_prompt_input_label}:</label>
           <textarea id="aiPromptInput" value={aiPromptInput} onChange={(e) => setAiPromptInput(e.target.value)} rows={3} />

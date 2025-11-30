@@ -72,7 +72,26 @@ const ControlPanel = () => {
     height, setHeight,
     clipskip, setClipSkip,
     denoise, setDenoise,
+    apiImageLandscape, setApiImageLandscape,
   } = useSettingsContext();
+
+  const RESOLUTION_TEMPLATES = [
+    { label: "512x512", w: 512, h: 512 },
+    { label: "512x768", w: 512, h: 768 },
+    { label: "768x512", w: 768, h: 512 },
+    { label: "768x1024", w: 768, h: 1024 },
+    { label: "1024x768", w: 1024, h: 768 },
+    { label: "1024x1024", w: 1024, h: 1024 },
+    { label: "720x1280", w: 720, h: 1280 },
+    { label: "1280x720", w: 1280, h: 720 },
+    { label: "1080x1920", w: 1080, h: 1920 },
+    { label: "1920x1080", w: 1920, h: 1080 },
+  ];
+
+  const applyResolution = (w, h) => {
+    setWidth(w);
+    setHeight(h);
+  };
 
 
 
@@ -363,6 +382,48 @@ const ControlPanel = () => {
               className="w-full"
             />
           </div>
+
+          {/* Resolution Templates & Preview */}
+          <div className="col-span-2 flex flex-col gap-2">
+            <label className="text-sm text-gray-400">Templates & Preview</label>
+            <div className="flex gap-4 items-start">
+              <div className="flex flex-wrap gap-2 flex-1">
+                {RESOLUTION_TEMPLATES.map((t) => (
+                  <button
+                    key={t.label}
+                    onClick={() => applyResolution(t.w, t.h)}
+                    className="px-2 py-1 bg-[#2c313a] hover:bg-[#3a3f4b] text-xs rounded border border-[#504c4a] transition-colors"
+                  >
+                    {t.label}
+                  </button>
+                ))}
+                <div className="checkbox-group mt-2 w-full">
+                  <input
+                    type="checkbox"
+                    id="apiImageLandscape"
+                    checked={apiImageLandscape}
+                    onChange={(e) => setApiImageLandscape(e.target.checked)}
+                  />
+                  <label htmlFor="apiImageLandscape" className="text-sm">{LANG.api_image_landscape}</label>
+                </div>
+              </div>
+
+              {/* Aspect Ratio Preview */}
+              <div className="flex items-center justify-center w-24 h-24 bg-[#0d1117] border border-[#504c4a] rounded p-1">
+                <div
+                  style={{
+                    width: width >= height ? '100%' : `${(width / height) * 100}%`,
+                    height: height >= width ? '100%' : `${(height / width) * 100}%`,
+                    aspectRatio: `${width}/${height}`,
+                    maxHeight: '100%',
+                    maxWidth: '100%',
+                  }}
+                  className="bg-[#d9b25c] transition-all duration-300"
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col gap-1">
             <label className="text-sm text-gray-400">Steps</label>
             <input
