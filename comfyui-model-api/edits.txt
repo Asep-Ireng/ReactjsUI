@@ -1,0 +1,56 @@
+# Cozy Glassmorphic Theme Edits
+
+This file contains the CSS you can drop into your project.
+
+```css
+:root {
+  /* — Font & Base — */
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
+  /* …all your existing vars… */
+
+  /* — Glassmorphism tokens — */
+  --glass-bg:       rgba(255, 255, 255, 0.06);
+  --glass-border:   rgba(255, 255, 255, 0.18);
+  --glass-blur:     blur(12px);
+
+  /* — Gradient tokens — */
+  --gradient-bg:            linear-gradient(135deg, #2e2a28, #3a3532);
+  --gradient-glass:         linear-gradient(to bottom right, rgba(255,255,255,0.12), rgba(255,255,255,0.02));
+  --gradient-btn-primary:   linear-gradient(45deg, var(--accent-color-primary), var(--accent-color-primary-hover));
+  --gradient-btn-secondary: linear-gradient(45deg, var(--accent-color-secondary), var(--accent-color-secondary-hover));
+}
+
+/* Glass utility */
+.glass-panel {
+  background-image: var(--gradient-glass), var(--glass-bg);
+  background-blend-mode: overlay;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+/* Body gradient */
+body {
+  background: var(--gradient-bg);
+  color: var(--text-color-main);
+}
+
+/* Buttons */
+.action-button.primary {
+  background: var(--gradient-btn-primary);
+  color: var(--button-primary-text);
+}
+.action-button.primary:hover {
+  background: linear-gradient(-45deg, var(--accent-color-primary-hover), var(--accent-color-primary));
+}
+
+.action-button:not(.primary) {
+  background: var(--gradient-btn-secondary);
+  color: var(--button-secondary-text);
+}
+.action-button:not(.primary):hover {
+  background: linear-gradient(-45deg, var(--accent-color-secondary-hover), var(--accent-color-secondary));
+}

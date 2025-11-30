@@ -25,11 +25,10 @@ body {
 
 .app-container {
   width: 100%;
-  max-width: 1920px;
-  min-height: 100vh;
-  margin: 0 auto;
-  background-color: #563600;
-  padding: 20px;
+  height: 100vh;
+  margin: 0;
+  background-color: transparent;
+  overflow: hidden;
 }
 
 h1 {
@@ -55,7 +54,8 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  border-radius: 10px; /* subtle lift */
+  border-radius: 10px;
+  /* subtle lift */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
@@ -77,6 +77,7 @@ h1 {
   overflow-y: auto;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 }
+
 /* --- END MAIN LAYOUT --- */
 
 /* === Input Rows and Groups within Control Panel === */
@@ -112,7 +113,7 @@ h1 {
   height: 100%;
 
 
-  
+
 }
 
 /* Model + Seed -> 2 items */
@@ -148,7 +149,7 @@ h1 {
   font-size: 0.95em;
   transition: border-color 0.25s ease, box-shadow 0.25s ease,
     background-color 0.25s ease;
-    width: 80%;
+  width: 80%;
 }
 
 .input-group select:hover,
@@ -197,12 +198,14 @@ h1 {
 .action-group {
   align-items: flex-start;
 }
+
 .action-group .action-dropdown-label {
   display: block;
   font-weight: 600;
   color: #d9b25c;
   margin-top: 5px;
 }
+
 .action-group select {
   width: 100%;
 }
@@ -212,9 +215,11 @@ h1 {
   display: flex;
   gap: 5px;
 }
+
 .seed-input-field {
   flex-grow: 1;
 }
+
 .random-seed-button {
   padding: 0 12px;
   background-color: #4f5666;
@@ -227,6 +232,7 @@ h1 {
   line-height: 40px;
   transition: background-color 0.2s ease, transform 0.15s ease;
 }
+
 .random-seed-button:hover {
   background-color: #5a6275;
   transform: translateY(-1px);
@@ -240,6 +246,7 @@ h1 {
   border-radius: 4px;
   background: #4f5666;
 }
+
 .seed-slider::-webkit-slider-thumb {
   background: #e49b0f;
   border-radius: 50%;
@@ -247,6 +254,7 @@ h1 {
   height: 14px;
   cursor: pointer;
 }
+
 .seed-slider::-moz-range-thumb {
   background: #e49b0f;
   border-radius: 50%;
@@ -263,9 +271,11 @@ h1 {
   margin-top: 2px;
   width: 100%;
 }
+
 .seed-range-labels span {
   white-space: nowrap;
 }
+
 .seed-range-labels span:nth-child(2) {
   text-align: center;
   flex-grow: 1;
@@ -279,6 +289,7 @@ h1 {
 .thumb-gallery-group {
   flex-basis: 100%;
 }
+
 .thumbnail-container {
   display: flex;
   gap: 10px;
@@ -290,6 +301,7 @@ h1 {
   align-items: center;
   flex-wrap: wrap;
 }
+
 .character-thumbnail {
   width: 128px;
   height: 128px;
@@ -301,6 +313,7 @@ h1 {
   transition: transform 0.2s ease, border-color 0.2s ease,
     box-shadow 0.2s ease;
 }
+
 .character-thumbnail:hover {
   transform: scale(1.05);
   border-color: #e49b0f;
@@ -355,10 +368,12 @@ h1 {
   flex-direction: column;
   gap: 5px;
 }
+
 .slider-group label {
   font-size: 0.9em;
   color: #d9b25c;
 }
+
 .slider-group input[type="range"] {
   width: 100%;
   accent-color: #d9b25c;
@@ -390,6 +405,7 @@ h1 {
   background: var(--gradient-btn-primary);
   color: var(--button-primary-text);
 }
+
 .action-button.primary:hover {
   background: linear-gradient(-45deg, var(--accent-color-primary-hover), var(--accent-color-primary));
   transform: translateY(-1px);
@@ -400,6 +416,7 @@ h1 {
   background: var(--gradient-btn-secondary);
   color: var(--button-secondary-text);
 }
+
 .action-button:not(.primary):hover {
   background: linear-gradient(-45deg, var(--accent-color-secondary-hover), var(--accent-color-secondary));
   transform: translateY(-1px);
@@ -419,12 +436,14 @@ h1 {
   flex-direction: column;
   gap: 8px;
 }
+
 .prompt-section label {
   display: block;
   font-weight: 600;
   color: #d9b25c;
   font-size: 0.9em;
 }
+
 .prompt-section textarea {
   width: 100%;
   padding: 10px;
@@ -437,6 +456,7 @@ h1 {
   resize: vertical;
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
+
 .prompt-section textarea:focus {
   outline: none;
   border-color: #e49b0f;
@@ -447,10 +467,12 @@ h1 {
 .system-settings-section {
   margin-top: 20px;
 }
+
 .system-settings-section .section-header .checkbox-label-header {
   font-size: 1.2em;
 }
-.system-settings-section .section-content > .input-group {
+
+.system-settings-section .section-content>.input-group {
   flex-basis: calc(50% - 10px);
   min-width: 250px;
 }
@@ -463,6 +485,7 @@ h1 {
   flex-basis: 100%;
   min-width: 100%;
 }
+
 .system-settings-section .input-grid .input-group {
   display: flex;
   flex-direction: column;
@@ -470,10 +493,8 @@ h1 {
   flex-basis: auto;
   min-width: auto;
 }
-.system-settings-section
-  .input-grid
-  .input-group
-  input[type="number"] {
+
+.system-settings-section .input-grid .input-group input[type="number"] {
   width: 70px;
 }
 
@@ -481,9 +502,11 @@ h1 {
   flex-basis: 100%;
   min-width: unset;
 }
+
 .system-settings-section .input-group textarea {
   min-height: 60px;
 }
+
 .system-settings-section .checkbox-group label {
   font-weight: 400;
   color: #e6e7eb;
@@ -494,35 +517,42 @@ h1 {
   flex-direction: column;
   gap: 5px;
 }
+
 .slider-group-horizontal label {
   font-size: 0.9em;
   color: #d9b25c;
   margin-bottom: 3px;
 }
+
 .slider-group-horizontal .slider-with-number {
   display: flex;
   align-items: center;
   gap: 10px;
 }
+
 .slider-group-horizontal input[type="range"] {
   flex-grow: 1;
   accent-color: #d9b25c;
 }
+
 .slider-group-horizontal .slider-number-input {
   width: 70px;
   padding: 8px;
   font-size: 0.9em;
   text-align: right;
 }
+
 .settings-separator {
   border: none;
   border-top: 1px solid #4f5666;
   margin: 20px 0;
 }
+
 .system-settings-buttons {
   margin-top: 15px;
   justify-content: space-around;
 }
+
 .system-settings-buttons .action-button {
   flex-grow: 0;
   flex-basis: calc(50% - 5px);
@@ -532,6 +562,7 @@ h1 {
 .model-selection-group {
   /* uses .input-group defaults */
 }
+
 .model-preview-card {
   display: flex;
   justify-content: center;
@@ -546,6 +577,7 @@ h1 {
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
+
 .model-preview-card img {
   max-width: 100%;
   max-height: 200px;
@@ -561,6 +593,7 @@ h1 {
   gap: 10px;
   margin-bottom: 20px;
 }
+
 .lora-section .section-header .checkbox-label-header {
   font-size: 1.2em;
 }
@@ -603,6 +636,7 @@ h1 {
   font-size: 2.5em;
   margin-bottom: 10px;
 }
+
 .output-gallery-placeholder.error-state {
   color: #e06c75;
 }
@@ -623,6 +657,7 @@ h1 {
   animation: fadeInImage 0.45s ease forwards;
   transition: transform 0.2s ease;
 }
+
 .generated-image-display:hover {
   transform: scale(1.02);
 }
@@ -645,15 +680,18 @@ h1 {
 .output-info-section {
   margin-bottom: 15px;
 }
+
 .output-info-section:last-child {
   margin-bottom: 0;
 }
+
 .output-info-section label {
   display: block;
   margin-bottom: 8px;
   font-weight: 700;
   color: #e6e7eb;
 }
+
 .output-info-section textarea {
   width: 100%;
   background-color: #171b22;
@@ -695,6 +733,7 @@ h1 {
   align-items: center;
   z-index: 1000;
 }
+
 .modal-content {
   background-color: #171b22;
   padding: 20px;
@@ -706,6 +745,7 @@ h1 {
   flex-direction: column;
   align-items: center;
 }
+
 .modal-content img {
   max-width: 100%;
   max-height: calc(90vh - 80px);
@@ -713,6 +753,7 @@ h1 {
   margin-bottom: 15px;
   border-radius: 8px;
 }
+
 .modal-close-button {
   padding: 8px 15px;
   background-color: #e49b0f;
@@ -736,6 +777,7 @@ h1 {
   max-width: 150px;
   max-height: 150px;
 }
+
 .hover-preview-image {
   display: block;
   width: 100%;
@@ -755,12 +797,14 @@ h1 {
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
   position: relative;
 }
+
 .progress-bar {
   height: 100%;
   background: linear-gradient(90deg, #e49b0f, #c77d08);
   transition: width 0.35s cubic-bezier(0.4, 2, 0.6, 1);
   width: 0%;
 }
+
 .progress-bar-label {
   position: absolute;
   left: 0;
@@ -776,6 +820,7 @@ h1 {
   letter-spacing: 0.3px;
   pointer-events: none;
 }
+
 .progress-bar-container-overlaid {
   position: absolute;
   bottom: 10px;
@@ -784,6 +829,7 @@ h1 {
   background-color: rgba(44, 49, 58, 0.75);
   z-index: 1;
 }
+
 .progress-bar-label-overlaid {
   color: #ffffff;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
@@ -791,7 +837,8 @@ h1 {
 
 /* === Download Button === */
 .download-button {
-  background-color: var(--accent-color-success);  border: none;
+  background-color: var(--accent-color-success);
+  border: none;
   color: white;
   padding: 10px 20px;
   text-align: center;
@@ -806,8 +853,10 @@ h1 {
   font-weight: 700;
   transition: background-color 0.2s ease, transform 0.15s ease;
 }
+
 .download-button:hover {
-  background-color: #7aae73; /* or derive a hover var */  
+  background-color: #7aae73;
+  /* or derive a hover var */
   transform: translateY(-1px);
 }
 
@@ -818,10 +867,12 @@ h1 {
   gap: 10px 15px;
   align-items: center;
 }
+
 .checkbox-grid .checkbox-group {
   margin-bottom: 0;
   gap: 8px;
 }
+
 .checkbox-grid .checkbox-group label {
   font-weight: 400;
   font-size: 0.85em;
@@ -832,6 +883,7 @@ h1 {
 .controlnet-section .input-group[style*="flex-basis: 100%"] {
   min-width: 0;
 }
+
 #cnAnyLineStyle {
   min-width: 100px;
   padding: 5px 8px;
@@ -842,18 +894,21 @@ h1 {
   border-radius: 6px;
   flex-shrink: 0;
 }
+
 .preprocessor-item {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
   gap: 8px;
 }
+
 .preprocessor-item .resolution-label {
   font-size: 0.8em;
   color: #d9b25c;
   margin-left: 5px;
   white-space: nowrap;
 }
+
 .preprocessor-item .resolution-input {
   width: 70px;
   padding: 6px;
@@ -894,18 +949,22 @@ h1 {
   .control-panel {
     min-width: 380px;
   }
+
   .output-panel {
     min-width: 280px;
   }
+
   .input-row .input-group,
   .input-row:has(#character-list-1) .input-group,
   .input-row:has(#ml) .input-group:has(#ml),
   .input-row:has(#ml) .input-group.seed-group {
     flex-basis: calc(50% - 10px);
   }
+
   .system-settings-section .input-group {
     flex-basis: calc(50% - 10px);
   }
+
   .system-settings-section .input-group.full-width-setting {
     flex-basis: 100%;
   }
@@ -915,6 +974,7 @@ h1 {
   .main-layout {
     flex-direction: column;
   }
+
   .control-panel,
   .output-panel {
     flex-basis: auto;
@@ -922,6 +982,7 @@ h1 {
     position: static;
     max-height: none;
   }
+
   .output-panel {
     margin-top: 30px;
   }
@@ -931,9 +992,11 @@ h1 {
   .app-container {
     padding: 10px;
   }
+
   h1 {
     font-size: 1.5rem;
   }
+
   .input-row .input-group,
   .input-row:has(#character-list-1) .input-group,
   .input-row:has(#ml) .input-group:has(#ml),
@@ -942,10 +1005,12 @@ h1 {
     flex-basis: 100%;
     min-width: unset;
   }
+
   .action-buttons-container,
   .system-settings-buttons {
     flex-direction: column;
   }
+
   .thumbnail-container {
     justify-content: center;
   }
@@ -954,12 +1019,7 @@ h1 {
 
 
 /* Three-column grid: rail | preview | controls */
-.main-layout {
-  display: grid;
-  grid-template-columns: 280px 1fr 420px;
-  grid-template-areas: "model-rail preview controls";
-  gap: 25px;
-}
+/* Main layout grid removed in favor of react-resizable-panels */
 
 /* Let gradient show through */
 .app-container {
@@ -970,9 +1030,11 @@ h1 {
 .model-rail {
   grid-area: model-rail;
 }
+
 .output-panel {
   grid-area: preview;
 }
+
 .control-panel {
   grid-area: controls;
 }
@@ -993,11 +1055,13 @@ h1 {
   gap: 10px;
   margin-bottom: 10px;
 }
+
 .model-rail-title {
   font-weight: 800;
   color: var(--text-color-headings);
   letter-spacing: 0.5px;
 }
+
 .model-search {
   width: 100%;
   padding: 10px 12px;
@@ -1008,6 +1072,7 @@ h1 {
   outline: none;
   transition: box-shadow 0.25s ease, border-color 0.25s ease;
 }
+
 .model-search:focus {
   border-color: var(--input-focus-border);
   box-shadow: 0 0 0 3px rgba(241, 143, 28, 0.25);
@@ -1034,21 +1099,21 @@ h1 {
   transition: transform 0.18s ease, box-shadow 0.2s ease,
     border-color 0.2s ease, background-color 0.2s ease;
 }
+
 .model-card:hover {
   transform: translateY(-1px);
   border-color: var(--input-focus-border);
   box-shadow: 0 6px 14px rgba(241, 143, 28, 0.2);
   background-color: rgba(255, 255, 255, 0.05);
 }
+
 .model-card.active {
   border-color: var(--input-focus-border);
   box-shadow: 0 0 0 2px rgba(241, 143, 28, 0.35) inset,
     0 10px 28px rgba(241, 143, 28, 0.18);
-  background-image: linear-gradient(
-    135deg,
-    rgba(241, 143, 28, 0.08),
-    rgba(241, 143, 28, 0.02)
-  );
+  background-image: linear-gradient(135deg,
+      rgba(241, 143, 28, 0.08),
+      rgba(241, 143, 28, 0.02));
 }
 
 .model-thumb {
@@ -1061,6 +1126,7 @@ h1 {
   display: grid;
   place-items: center;
 }
+
 .model-thumb img {
   width: 100%;
   height: 100%;
@@ -1073,6 +1139,7 @@ h1 {
   flex-direction: column;
   min-width: 0;
 }
+
 .model-name {
   color: var(--text-color-headings);
   font-weight: 700;
@@ -1081,6 +1148,7 @@ h1 {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .model-sub {
   color: #b8b0aa;
   font-size: 0.75rem;
@@ -1088,6 +1156,7 @@ h1 {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .model-empty {
   color: #b8b0aa;
   text-align: center;
@@ -1130,20 +1199,20 @@ h1 {
   width: 10px;
   height: 10px;
 }
+
 .model-rail::-webkit-scrollbar-track,
 .output-panel::-webkit-scrollbar-track,
 .control-panel::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 10px;
 }
+
 .model-rail::-webkit-scrollbar-thumb,
 .output-panel::-webkit-scrollbar-thumb,
 .control-panel::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    var(--accent-color-primary),
-    var(--accent-color-primary-hover)
-  );
+  background: linear-gradient(180deg,
+      var(--accent-color-primary),
+      var(--accent-color-primary-hover));
   border-radius: 10px;
   border: 2px solid rgba(0, 0, 0, 0.15);
 }
@@ -1162,6 +1231,7 @@ h1 {
 .action-button.primary {
   box-shadow: 0 8px 18px rgba(241, 143, 28, 0.22);
 }
+
 .action-button.primary:hover {
   box-shadow: 0 12px 28px rgba(241, 143, 28, 0.35);
 }
@@ -1172,6 +1242,7 @@ h1 {
     grid-template-columns: 240px 1fr 360px;
   }
 }
+
 @media (max-width: 992px) {
   .main-layout {
     grid-template-columns: 1fr;
@@ -1180,12 +1251,14 @@ h1 {
       "model-rail"
       "controls";
   }
+
   .model-rail,
   .output-panel,
   .control-panel {
     position: static;
     max-height: none;
   }
+
   .output-panel .output-gallery-container {
     min-height: 360px;
   }
@@ -1206,6 +1279,7 @@ h1 {
   min-height: 420px;
   max-height: none;
 }
+
 .model-rail {
   position: sticky;
   top: 20px;

@@ -57,11 +57,11 @@ const ModelRail = () => {
   };
 
   return (
-    <aside className="model-rail glass-panel">
-      <div className="model-rail-header">
-        <div className="model-rail-title">Models</div>
+    <aside className="model-rail w-full h-full flex flex-col gap-4 p-4 glass-panel overflow-y-auto">
+      <div className="flex flex-col gap-2">
+        <div className="text-lg font-bold text-white">Models</div>
         <input
-          className="model-search"
+          className="w-full p-2 rounded bg-[#222] border border-[#504c4a] text-white"
           type="text"
           placeholder="Search models…"
           value={query}
@@ -69,18 +69,18 @@ const ModelRail = () => {
         />
       </div>
 
-      <div className="model-list">
+      <div className="flex flex-col gap-2 overflow-y-auto flex-grow">
         {filtered.map((opt) => {
           const isActive = opt.value === selectedModel;
           return (
             <button
               key={opt.value || opt.label}
-              className={`model-card ${isActive ? "active" : ""}`}
+              className={`flex items-center gap-3 p-2 rounded hover:bg-[#3a3f4b] transition-colors text-left w-full ${isActive ? "bg-[#e49b0f] text-black" : ""}`}
               onClick={() => setSelectedModel(opt.value)}
               title={opt.label}
             >
               <div
-                className="model-thumb"
+                className="w-12 h-12 rounded overflow-hidden flex-shrink-0"
                 onClick={(e) => {
                   e.stopPropagation();
                   openImage(opt.thumb);
@@ -95,15 +95,15 @@ const ModelRail = () => {
                   }}
                 />
               </div>
-              <div className="model-meta">
-                <div className="model-name">{opt.label}</div>
-                {opt.meta ? <div className="model-sub">{opt.meta}</div> : null}
+              <div className="flex flex-col overflow-hidden">
+                <div className="font-bold truncate">{opt.label}</div>
+                {opt.meta ? <div className="text-xs text-gray-400 truncate">{opt.meta}</div> : null}
               </div>
             </button>
           );
         })}
         {filtered.length === 0 && (
-          <div className="model-empty">No models found</div>
+          <div className="text-center text-gray-500 mt-4">No models found</div>
         )}
       </div>
     </aside>

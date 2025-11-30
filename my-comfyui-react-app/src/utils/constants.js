@@ -23,7 +23,7 @@ export const LANG = {
   output_prompt: "Prompt",
   output_info: "Information",
   ai_system_prompt_text: "AI System Prompt",
-  ai_system_prompt_content:    'You are a Stable Diffusion prompt writer...',
+  ai_system_prompt_content: 'You are a Stable Diffusion prompt writer...',
   samplerDescriptionLabel: "Description",
   schedulerDescriptionLabel: "Scheduler Description",
   outputGalleryPlaceholder: "Gallery",
@@ -78,31 +78,40 @@ export const LANG = {
   controlNetProcessedPreviewLabel: "Preprocessor Output",
   selectModelPlaceholder: "Select Model...",
 };
+
 export const DEFAULT_THUMB_SRC =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect " +
-    "width='100' height='100' fill='%23555'/%3E%3Ctext x='50%25' y='50%25' " +
-    "dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' " +
-    "font-size='12px' fill='%23fff'%3ENo Thumb%3C/text%3E%3C/svg%3E";
+  "width='100' height='100' fill='%23555'/%3E%3Ctext x='50%25' y='50%25' " +
+  "dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' " +
+  "font-size='12px' fill='%23fff'%3ENo Thumb%3C/text%3E%3C/svg%3E";
 
 export const selectStyles = {
-  control: (p, s) => ({ ...p, backgroundColor: "#2c313a", borderColor: s.isFocused ? "#61dafb" : "#4f5666", boxShadow: s.isFocused ? "0 0 0 1px #61dafb" : null, "&:hover": { borderColor: s.isFocused ? "#61dafb" : "#5a6275" }, minHeight: "40px" }),
-  menu: (p) => ({ ...p, backgroundColor: "#2c313a", zIndex: 1000 }),
+  control: (p, s) => ({
+    ...p,
+    backgroundColor: "#171b22",
+    borderColor: s.isFocused ? "#f18f1c" : "#504c4a",
+    boxShadow: s.isFocused ? "0 0 0 1px #f18f1c" : null,
+    "&:hover": { borderColor: s.isFocused ? "#f18f1c" : "#6e5e50" },
+    minHeight: "40px",
+    color: "#e9e3de",
+  }),
+  menu: (p) => ({ ...p, backgroundColor: "#171b22", zIndex: 1000, border: "1px solid #504c4a" }),
   option: (p, s) => ({
     ...p,
-    backgroundColor: s.isSelected ? "#61dafb" : s.isFocused ? "#353941" : "#2c313a",
-    color: s.isSelected ? "#20232a" : "#abb2bf",
-    "&:active": { backgroundColor: "#52b6d9" },
+    backgroundColor: s.isSelected ? "#f18f1c" : s.isFocused ? "#2a282e" : "#171b22",
+    color: s.isSelected ? "#ffffff" : "#e9e3de",
+    "&:active": { backgroundColor: "#d17314" },
     padding: "10px 12px",
     cursor: "pointer",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
   }),
-  singleValue: (p) => ({ ...p, color: "#abb2bf" }),
-  input: (p) => ({ ...p, color: "#abb2bf" }),
-  placeholder: (p) => ({ ...p, color: "#888" }),
+  singleValue: (p) => ({ ...p, color: "#e9e3de" }),
+  input: (p) => ({ ...p, color: "#e9e3de" }),
+  placeholder: (p) => ({ ...p, color: "#8a93a3" }),
   indicatorSeparator: () => null,
-  dropdownIndicator: (p) => ({ ...p, color: "#abb2bf", "&:hover": { color: "#61dafb" } }),
+  dropdownIndicator: (p) => ({ ...p, color: "#8a93a3", "&:hover": { color: "#f18f1c" } }),
 };
 
 export const colorTransferOptions = [
@@ -110,6 +119,7 @@ export const colorTransferOptions = [
   { label: "Mean", value: "Mean" },
   { label: "Lab", value: "Lab" },
 ];
+
 
 export const aiPromptGeneratorOptions = [
   { value: "none", label: "None" },

@@ -9,6 +9,7 @@ import ControlNetSection from "./ControlNetSection.jsx";
 import HiresFixSection from "./HiresFixSection.jsx";
 import ClipVisionSection from "./ClipVisionSection.jsx";
 import SystemSettingsSection from "./SystemSettingsSection.jsx";
+import SelectOptionWithHoverPreview from "./SelectOptionWithHoverPreview.jsx";
 
 const ControlPanel = () => {
   const {
@@ -64,57 +65,23 @@ const ControlPanel = () => {
     handleAIPromptGenerate,
   } = useGenerationContext();
 
-  const SelectOptionWithHoverPreview = (props) => {
-    const { data } = props;
+  const {
+    cfg, setCfg,
+    steps, setSteps,
+    width, setWidth,
+    height, setHeight,
+    clipskip, setClipSkip,
+    denoise, setDenoise,
+  } = useSettingsContext();
 
-    const handleMouseEnter = () => {
-      if (
-        data.value &&
-        data.value !== "random" &&
-        data.value !== "none" &&
-        mergedThumbData &&
-        actualCharacterOptionsForRandom
-      ) {
-        const { thumbSrc } = getCharacterDisplayData(
-          data.value,
-          actualCharacterOptionsForRandom,
-          mergedThumbData
-        );
-        setHoveredCharacterPreviewSrc(thumbSrc);
-      } else {
-        setHoveredCharacterPreviewSrc(null);
-      }
-    };
 
-    const handleMouseLeave = () => setHoveredCharacterPreviewSrc(null);
-
-    return (
-      <div
-        {...props.innerProps}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        style={{
-          backgroundColor: props.isSelected
-            ? "#61dafb"
-            : props.isFocused
-            ? "#353941"
-            : "#2c313a",
-          color: props.isSelected ? "#20232a" : "#abb2bf",
-          padding: "8px 12px",
-          cursor: "pointer",
-        }}
-      >
-        {props.label}
-      </div>
-    );
-  };
 
   const currentSliderValue =
     seed === "-1" || seed === "" || isNaN(parseInt(seed)) || parseInt(seed) < 0
       ? "0"
       : parseInt(seed) > MAX_SEED
-      ? MAX_SEED.toString()
-      : seed;
+        ? MAX_SEED.toString()
+        : seed;
 
   const randomizeSeed = () => {
     const newRandomSeed = Math.floor(Math.random() * (MAX_SEED + 1));
@@ -151,8 +118,50 @@ const ControlPanel = () => {
   );
 
   return (
-    <div className="control-panel">
+    <div className="control-panel flex flex-col gap-8 min-w-[400px] h-full overflow-y-auto p-4">
       <h1>My ComfyUI Frontend</h1>
+
+      <div className="sticky top-0 z-10 bg-[#171b22] pb-4 border-b border-[#504c4a] mb-4 pt-2 -mx-4 px-4 shadow-md opacity-40 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300">
+        <div className="action-buttons-container mb-4">
+          <button onClick={handleCreatePrompt} className="action-button primary">
+            {LANG.run_button}
+          </button>
+          <button
+            onClick={() => alert("Not implemented yet")}
+            className="action-button"
+          >
+            {LANG.run_random_button}
+          </button>
+          <button
+            onClick={() => alert("Not implemented yet")}
+            className="action-button"
+          >
+            {LANG.run_same_button}
+          </button>
+        </div>
+
+        <div className="prompt-section mb-4">
+          <label htmlFor="cp">{LANG.custom_prompt}:</label>
+          <textarea
+            id="cp"
+            value={promptText}
+            onChange={(e) => setPromptText(e.target.value)}
+            rows={4}
+          />
+        </div>
+
+        <button
+          onClick={handleAIPromptGenerate}
+          disabled={isGeneratingAIPrompt || selectedAIPromptGenerator === "none"}
+          className="action-button ai-generate-button w-full"
+        >
+          {isGeneratingAIPrompt ? "Generating..." : "Generate with AI"}
+        </button>
+
+        {aiGenerationError && (
+          <p className="error-message mt-2">Error: {aiGenerationError}</p>
+        )}
+      </div>
 
       {hoveredCharacterPreviewSrc && (
         <div className="hover-preview-container">
@@ -164,9 +173,9 @@ const ControlPanel = () => {
         </div>
       )}
 
-      <div className="input-row">
-        <div className="input-group">
-          <label htmlFor="character-list-1">{LANG.character1}:</label>
+      <div className="flex flex-wrap gap-5 mb-5 items-start justify-between">
+        <div className="flex-grow shrink basis-[calc(33.33%-14px)] min-w-[200px] flex flex-col gap-2 text-center">
+          <label htmlFor="character-list-1" className="text-base font-bold text-[#d9b25c] mb-2">{LANG.character1}:</label>
           <Select
             id="character-list-1"
             options={characterDropdownOptions}
@@ -182,8 +191,8 @@ const ControlPanel = () => {
           />
         </div>
 
-        <div className="input-group">
-          <label htmlFor="character-list-2">{LANG.character2}:</label>
+        <div className="flex-grow shrink basis-[calc(33.33%-14px)] min-w-[200px] flex flex-col gap-2 text-center">
+          <label htmlFor="character-list-2" className="text-base font-bold text-[#d9b25c] mb-2">{LANG.character2}:</label>
           <Select
             id="character-list-2"
             options={characterDropdownOptions}
@@ -199,8 +208,8 @@ const ControlPanel = () => {
           />
         </div>
 
-        <div className="input-group">
-          <label htmlFor="character-list-3">{LANG.character3}:</label>
+        <div className="flex-grow shrink basis-[calc(33.33%-14px)] min-w-[200px] flex flex-col gap-2 text-center">
+          <label htmlFor="character-list-3" className="text-base font-bold text-[#d9b25c] mb-2">{LANG.character3}:</label>
           <Select
             id="character-list-3"
             options={characterDropdownOptions}
@@ -216,7 +225,7 @@ const ControlPanel = () => {
           />
         </div>
 
-        <div className="input-group action-group">
+        <div className="flex-grow shrink basis-[calc(33.33%-14px)] min-w-[200px] flex flex-col gap-2 text-center items-start">
           <div className="checkbox-group">
             <input
               type="checkbox"
@@ -243,9 +252,9 @@ const ControlPanel = () => {
       </div>
 
       {/* Model dropdown removed. Seed stays alone in this row. */}
-      <div className="input-row">
-        <div className="input-group seed-group">
-          <label htmlFor="rs">{LANG.random_seed}:</label>
+      <div className="flex flex-wrap gap-5 mb-5 items-start justify-between">
+        <div className="flex-grow shrink basis-[calc(50%-10px)] bg-[#181818] p-2.5 rounded-md flex flex-col gap-2 text-center">
+          <label htmlFor="rs" className="text-base font-bold text-[#d9b25c] mb-2">{LANG.random_seed}:</label>
           <div className="seed-input-container">
             <input
               type="text"
@@ -279,16 +288,16 @@ const ControlPanel = () => {
               {seed === "-1" || seed === ""
                 ? "(R)"
                 : isNaN(parseInt(seed))
-                ? "(I)"
-                : seed}
+                  ? "(I)"
+                  : seed}
             </span>
             <span>{MAX_SEED}</span>
           </div>
         </div>
       </div>
 
-      <div className="input-row">
-        <div className="input-group">
+      <div className="flex flex-wrap gap-5 mb-5 items-start justify-between">
+        <div className="flex-grow shrink basis-[calc(33.33%-14px)] min-w-[200px] flex flex-col gap-2 text-center">
           <label htmlFor="sl">{LANG.api_sampling_method}:</label>
           <select
             id="sl"
@@ -303,14 +312,14 @@ const ControlPanel = () => {
           </select>
         </div>
 
-        <div className="input-group description-group">
+        <div className="flex-grow shrink basis-[calc(33.33%-14px)] min-w-[200px] flex flex-col gap-2 text-center">
           <label htmlFor="sd">{LANG.samplerDescriptionLabel}:</label>
           <textarea id="sd" value={samplerDescription} readOnly rows={2} />
         </div>
       </div>
 
-      <div className="input-row">
-        <div className="input-group">
+      <div className="flex flex-wrap gap-5 mb-5 items-start justify-between">
+        <div className="flex-grow shrink basis-[calc(33.33%-14px)] min-w-[200px] flex flex-col gap-2 text-center">
           <label htmlFor="schl">{LANG.api_scheduler}:</label>
           <select
             id="schl"
@@ -325,14 +334,92 @@ const ControlPanel = () => {
           </select>
         </div>
 
-        <div className="input-group description-group">
+        <div className="flex-grow shrink basis-[calc(33.33%-14px)] min-w-[200px] flex flex-col gap-2 text-center">
           <label htmlFor="schd">{LANG.schedulerDescriptionLabel}:</label>
           <textarea id="schd" value={schedulerDescription} readOnly rows={2} />
         </div>
       </div>
 
-      <div className="input-row">
-        <div className="input-group thumb-gallery-group">
+      {/* Generation Settings Section */}
+      <div className="flex flex-col gap-4 mb-8 p-4 bg-[#181818] rounded-lg border border-[#504c4a]">
+        <h3 className="text-[#d9b25c] font-bold border-b border-[#504c4a] pb-2 mb-2">Generation Settings</h3>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm text-gray-400">Width</label>
+            <input
+              type="number"
+              value={width}
+              onChange={(e) => setWidth(parseInt(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm text-gray-400">Height</label>
+            <input
+              type="number"
+              value={height}
+              onChange={(e) => setHeight(parseInt(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm text-gray-400">Steps</label>
+            <input
+              type="number"
+              value={steps}
+              onChange={(e) => setSteps(parseInt(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm text-gray-400">CFG Scale</label>
+            <input
+              type="number"
+              value={cfg}
+              onChange={(e) => setCfg(e.target.value)}
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4 mt-2">
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between">
+              <label className="text-sm text-gray-400">Clip Skip</label>
+              <span className="text-xs text-[#d9b25c]">{clipskip}</span>
+            </div>
+            <input
+              type="range"
+              min="-12"
+              max="-1"
+              step="1"
+              value={clipskip}
+              onChange={(e) => setClipSkip(parseInt(e.target.value))}
+              className="w-full accent-[#f18f1c]"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between">
+              <label className="text-sm text-gray-400">Denoising Strength</label>
+              <span className="text-xs text-[#d9b25c]">{denoise}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={denoise}
+              onChange={(e) => setDenoise(parseFloat(e.target.value))}
+              className="w-full accent-[#f18f1c]"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-5 mb-5 items-start justify-between">
+        <div className="basis-full flex flex-col gap-2 text-center">
           <label>{LANG.thumbImageGalleryLabel}:</label>
           <div className="thumbnail-container">
             <img
@@ -362,45 +449,7 @@ const ControlPanel = () => {
       <ClipVisionSection />
       <HiresFixSection />
 
-      <div className="action-buttons-container">
-        <button onClick={handleCreatePrompt} className="action-button primary">
-          {LANG.run_button}
-        </button>
-        <button
-          onClick={() => alert("Not implemented yet")}
-          className="action-button"
-        >
-          {LANG.run_random_button}
-        </button>
-        <button
-          onClick={() => alert("Not implemented yet")}
-          className="action-button"
-        >
-          {LANG.run_same_button}
-        </button>
-      </div>
 
-      <div className="prompt-section">
-        <label htmlFor="cp">{LANG.custom_prompt}:</label>
-        <textarea
-          id="cp"
-          value={promptText}
-          onChange={(e) => setPromptText(e.target.value)}
-          rows={4}
-        />
-      </div>
-
-      <button
-        onClick={handleAIPromptGenerate}
-        disabled={isGeneratingAIPrompt || selectedAIPromptGenerator === "none"}
-        className="action-button ai-generate-button"
-      >
-        {isGeneratingAIPrompt ? "Generating..." : "Generate with AI"}
-      </button>
-
-      {aiGenerationError && (
-        <p className="error-message">Error: {aiGenerationError}</p>
-      )}
 
       <div className="prompt-section">
         <label htmlFor="ppt">{LANG.api_prompt}:</label>

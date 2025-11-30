@@ -101,42 +101,7 @@ const SystemSettingsSection = () => {
             {batchGenerateRuleOptions.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
           </select>
         </div>
-      <div className="input-grid">
-        <div className="input-group" >
-          <label htmlFor="cfg">CFG:</label>
-          <input type="number" id="cfg" value={cfg} onChange={(e) => setCfg(e.target.value)} />
-        </div>
-        <div className="input-group">
-          <label htmlFor="steps">Steps:</label>
-          <input type="number" id="steps" value={steps} onChange={(e) => setSteps(parseInt(e.target.value, 10))} />
-        </div>
-        <div className="input-group">
-          <label htmlFor="width">Width:</label>
-          <input type="number" id="width" value={width} onChange={(e) => setWidth(parseInt(e.target.value, 10))} />
-        </div>
-        <div className="input-group">
-          <label htmlFor="height">Height:</label>
-          <input type="number" id="height" value={height} onChange={(e) => setHeight(parseInt(e.target.value, 10))} />
-        </div>
-        <div className="input-group">
-          <label htmlFor="loops">Loops:</label>
-          <input type="number" id="loops" value={loops} onChange={(e) => setLoops(parseInt(e.target.value, 10))} style={{ width: "70px" }} />
-        </div>
-        <div className="input-group slider-group-horizontal">
-          <label htmlFor="clipSkip">Clip Skip: {clipskip}</label>
-          <div className="slider-with-number">
-            <input type="range" id="clipSkip" min="-12" max="-1" step="1" value={clipskip} onChange={(e) => setClipSkip(parseInt(e.target.value, 10))} />
-            <input type="number" value={clipskip} onChange={(e) => setClipSkip(parseInt(e.target.value, 10))} min="-12" max="-1" className="slider-number-input" />
-          </div>
-        </div>
-          <div className="input-group slider-group-horizontal">
-          <label htmlFor="denoise">Denoise: {denoise}</label>
-          <div className="slider-with-number">
-            <input type="range" id="denoise" min="0" max="1.0" step="0.1" value={denoise} onChange={(e) => setDenoise(parseFloat(e.target.value, 10))} />
-            <input type="number" value={denoise} onChange={(e) => setDenoise(parseFloat(e.target.value, 10))} min="0" max="1.0" className="slider-number-input" />
-          </div>
-        </div>
-        </div>
+
         <div className="input-group">
           <div className="checkbox-group" style={{ marginTop: "10px" }}>
             <input type="checkbox" id="apiImageLandscape" checked={apiImageLandscape} onChange={(e) => setApiImageLandscape(e.target.checked)} />
@@ -177,6 +142,7 @@ const SystemSettingsSection = () => {
           </button>
         </div>
       </div>
+
     </div>
   );
 };
