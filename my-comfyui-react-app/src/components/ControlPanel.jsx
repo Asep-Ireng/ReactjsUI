@@ -10,6 +10,8 @@ import HiresFixSection from "./HiresFixSection.jsx";
 import ClipVisionSection from "./ClipVisionSection.jsx";
 import SystemSettingsSection from "./SystemSettingsSection.jsx";
 import SelectOptionWithHoverPreview from "./SelectOptionWithHoverPreview.jsx";
+import TagAutocomplete from "./TagAutocomplete.jsx";
+import CharacterTagTool from "./CharacterTagTool.jsx";
 
 const ControlPanel = () => {
   const {
@@ -161,7 +163,7 @@ const ControlPanel = () => {
 
         <div className="prompt-section mb-4">
           <label htmlFor="cp">{LANG.custom_prompt}:</label>
-          <textarea
+          <TagAutocomplete
             id="cp"
             value={promptText}
             onChange={(e) => setPromptText(e.target.value)}
@@ -512,9 +514,17 @@ const ControlPanel = () => {
 
 
 
+      <CharacterTagTool
+        onInsert={(tag) => {
+          // Append to promptText with a comma if needed
+          const separator = promptText.trim().length > 0 && !promptText.trim().endsWith(',') ? ', ' : '';
+          setPromptText(prev => prev + separator + tag);
+        }}
+      />
+
       <div className="prompt-section">
         <label htmlFor="ppt">{LANG.api_prompt}:</label>
-        <textarea
+        <TagAutocomplete
           id="ppt"
           value={positivePromptTail}
           onChange={(e) => setPositivePromptTail(e.target.value)}
@@ -524,7 +534,7 @@ const ControlPanel = () => {
 
       <div className="prompt-section">
         <label htmlFor="np">{LANG.api_neg_prompt}:</label>
-        <textarea
+        <TagAutocomplete
           id="np"
           value={negativePromptText}
           onChange={(e) => setNegativePromptText(e.target.value)}
