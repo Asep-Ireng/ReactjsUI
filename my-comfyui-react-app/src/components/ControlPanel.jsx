@@ -12,6 +12,7 @@ import SystemSettingsSection from "./SystemSettingsSection.jsx";
 import SelectOptionWithHoverPreview from "./SelectOptionWithHoverPreview.jsx";
 import TagAutocomplete from "./TagAutocomplete.jsx";
 import CharacterTagTool from "./CharacterTagTool.jsx";
+import ModelSettingsSection from "./ModelSettingsSection.jsx";
 
 const ControlPanel = () => {
   const {
@@ -507,6 +508,7 @@ const ControlPanel = () => {
         </div>
       </div>
 
+      <ModelSettingsSection />
       <LoraSection />
       <ControlNetSection />
       <ClipVisionSection />

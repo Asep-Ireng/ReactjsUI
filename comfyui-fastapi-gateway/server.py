@@ -1,6 +1,7 @@
 # server.py (FastAPI)
 import json
 import base64
+import urllib.request as request
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -58,6 +59,16 @@ class GenerateRequest(BaseModel):
     hf_scheduler: Optional[str] = None
     hf_temporal_size: Optional[int] = 64
     hf_temporal_overlap: Optional[int] = 8
+
+    # Model Merge (NEW)
+    model_merge_enabled: bool = False
+    model2_name: Optional[str] = None
+    model_merge_ratio: Optional[float] = 0.5
+
+    # Sampling Discrete (NEW)
+    sampling_discrete_enabled: bool = False
+    sampling_type: Optional[str] = "eps"
+    zsnr_enabled: bool = False
 
     # LoRAs
     loras_enabled: bool = False
@@ -147,6 +158,34 @@ async def preview_controlnet(req: ControlNetPreviewRequest):
         traceback.print_exc()
         # Return error in JSON format
         return {"error": str(e)} # Or raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/get-samplers")
+async def get_samplers():
+    print("INFO: FastAPI /api/get-samplers called")
+    try:
+        # Fetch directly from ComfyUI
+        with request.urlopen(f"http://192.168.50.106:8188/object_info/KSampler") as response:
+            data = json.loads(response.read())
+            # KSampler -> input -> required -> sampler_name -> [0] is the list
+            samplers = data['KSampler']['input']['required']['sampler_name'][0]
+            return {"samplers": samplers}
+    except Exception as e:
+        print(f"ERROR fetch samplers: {e}")
+        return {"error": str(e)}
+
+@app.get("/api/get-schedulers")
+async def get_schedulers():
+    print("INFO: FastAPI /api/get-schedulers called")
+    try:
+        # Fetch directly from ComfyUI
+        with request.urlopen(f"http://192.168.50.106:8188/object_info/KSampler") as response:
+            data = json.loads(response.read())
+            # KSampler -> input -> required -> scheduler -> [0] is the list
+            schedulers = data['KSampler']['input']['required']['scheduler'][0]
+            return {"schedulers": schedulers}
+    except Exception as e:
+        print(f"ERROR fetch schedulers: {e}")
+        return {"error": str(e)}
     
 @app.websocket("/api/generate-ws")
 async def generate_ws(websocket: WebSocket):

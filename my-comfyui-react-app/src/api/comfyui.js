@@ -72,6 +72,34 @@ export function fetchClipVisionModels() {
 }
 
 /**
+ * Fetches the list of samplers from ComfyUI (via backend proxy).
+ */
+export function fetchSamplers() {
+  console.log(`Fetching samplers from: ${GENERATE_API_BASE}/get-samplers`);
+  return axios
+    .get(`${GENERATE_API_BASE}/get-samplers`)
+    .then((r) => r.data.samplers)
+    .catch((error) => {
+      console.error("Error fetching samplers:", error);
+      throw error;
+    });
+}
+
+/**
+ * Fetches the list of schedulers from ComfyUI (via backend proxy).
+ */
+export function fetchSchedulers() {
+  console.log(`Fetching schedulers from: ${GENERATE_API_BASE}/get-schedulers`);
+  return axios
+    .get(`${GENERATE_API_BASE}/get-schedulers`)
+    .then((r) => r.data.schedulers)
+    .catch((error) => {
+      console.error("Error fetching schedulers:", error);
+      throw error;
+    });
+}
+
+/**
  * Generates an image via an HTTP POST request.
  * Note: Your App.jsx uses WebSockets for generation. This function might be for a different purpose.
  */

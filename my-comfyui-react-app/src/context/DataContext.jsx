@@ -15,6 +15,8 @@ import {
   fetchLoras,
   fetchControlNetModels,
   fetchClipVisionModels,
+  fetchSamplers,
+  fetchSchedulers,
 } from "../api/comfyui";
 import { LANG, DEFAULT_THUMB_SRC } from "../utils/constants";
 
@@ -39,6 +41,8 @@ export const DataProvider = ({ children }) => {
   const [rawLoraListData, setRawLoraListData] = useState(null);
   const [rawControlNetModelData, setRawControlNetModelData] = useState(null);
   const [rawClipVisionModelData, setRawClipVisionModelData] = useState(null);
+  const [rawSamplerData, setRawSamplerData] = useState(null);
+  const [rawSchedulerData, setRawSchedulerData] = useState(null);
   const [appSettings, setAppSettings] = useState(null);
   const [dataLoadingError, setDataLoadingError] = useState(null);
 
@@ -80,6 +84,8 @@ export const DataProvider = ({ children }) => {
           loras,
           cnModels,
           cvModels,
+          samplersRes,
+          schedulersRes,
         ] = await Promise.all([
           fetch(CSV_CHARACTER_FILE_PATH),
           fetch(JSON_CHARACTER_FILE_PATH),
@@ -91,6 +97,8 @@ export const DataProvider = ({ children }) => {
           fetchLoras(),
           fetchControlNetModels(),
           fetchClipVisionModels(),
+          fetchSamplers(),
+          fetchSchedulers(),
         ]);
 
         // This is a better way to handle multiple fetches
@@ -117,8 +125,11 @@ export const DataProvider = ({ children }) => {
         setRawLoraListData(loras);
         setRawControlNetModelData(cnModels);
         setRawClipVisionModelData(cvModels);
+        setRawSamplerData(samplersRes);
+        setRawSchedulerData(schedulersRes);
       } catch (error) {
         console.error("Error during initial data fetch:", error);
+        // Fallback for samplers/schedulers if API fails (optional, or just empty)
         setDataLoadingError(error.message || "Failed to fetch critical data.");
       }
     };
@@ -159,22 +170,22 @@ export const DataProvider = ({ children }) => {
       setLoraDropdownOptions(
         opts.length
           ? [
-              {
-                label: LANG.selectLoraPlaceholder,
-                value: "none",
-                thumbnail: DEFAULT_THUMB_SRC,
-                compatible_base_model: null,
-              },
-              ...opts,
-            ]
+            {
+              label: LANG.selectLoraPlaceholder,
+              value: "none",
+              thumbnail: DEFAULT_THUMB_SRC,
+              compatible_base_model: null,
+            },
+            ...opts,
+          ]
           : [
-              {
-                label: LANG.noLorasAvailable,
-                value: "",
-                thumbnail: DEFAULT_THUMB_SRC,
-                compatible_base_model: null,
-              },
-            ]
+            {
+              label: LANG.noLorasAvailable,
+              value: "",
+              thumbnail: DEFAULT_THUMB_SRC,
+              compatible_base_model: null,
+            },
+          ]
       );
     }
   }, [rawLoraListData]);
@@ -202,31 +213,26 @@ export const DataProvider = ({ children }) => {
   }, [rawClipVisionModelData]);
 
   useEffect(() => {
+    if (Array.isArray(rawSamplerData)) {
+      const opts = rawSamplerData.map((s) => ({ label: s, value: s }));
+      setSamplerOptions(
+        opts.length ? opts : [{ label: "No samplers found", value: "" }]
+      );
+    }
+  }, [rawSamplerData]);
+
+  useEffect(() => {
+    if (Array.isArray(rawSchedulerData)) {
+      const opts = rawSchedulerData.map((s) => ({ label: s, value: s }));
+      setSchedulerOptions(
+        opts.length ? opts : [{ label: "No schedulers found", value: "" }]
+      );
+    }
+  }, [rawSchedulerData]);
+
+  useEffect(() => {
     if (appSettings) {
-      if (appSettings.api_sampling_list) {
-        const samplers = appSettings.api_sampling_list.map((s) => ({
-          label: s.name,
-          value: s.name,
-          description: s.description || "",
-        }));
-        setSamplerOptions(
-          samplers.length > 0
-            ? samplers
-            : [{ label: "No samplers found", value: "" }]
-        );
-      }
-      if (appSettings.api_scheduler_list) {
-        const schedulers = appSettings.api_scheduler_list.map((s) => ({
-          label: s.name,
-          value: s.name,
-          description: s.description || "",
-        }));
-        setSchedulerOptions(
-          schedulers.length > 0
-            ? schedulers
-            : [{ label: "No schedulers found", value: "" }]
-        );
-      }
+      /* Samplers and Schedulers are now fetched dynamically */
       if (appSettings.api_hf_upscaler_list) {
         const upscalers = appSettings.api_hf_upscaler_list.map((u) => ({
           label: u,
@@ -300,7 +306,7 @@ export const DataProvider = ({ children }) => {
     return fT;
   }, [rawPrimaryThumbsData, rawFallbackThumbsData]);
 
-const getCharacterDisplayData = useCallback(
+  const getCharacterDisplayData = useCallback(
     (characterValue, actualOptions, mergedThumbs) => {
       let resolvedTags = characterValue;
       let thumbSrc = DEFAULT_THUMB_SRC;

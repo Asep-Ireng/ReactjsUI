@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+*.venv/
+*.env
+env/
+venv/
+
+# Build Outputs
+dist/
+build/
+*.log
+
+# IDE Settings
+.idea/
+.vscode/
+*.swp
+
+# Application Settings & Secrets
+settings/comfyui_frontend_settings.json
+*.key
+*.pem
+
+# System
+Thumbs.db
+order.json

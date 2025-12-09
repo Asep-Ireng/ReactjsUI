@@ -77,6 +77,11 @@ export const LANG = {
   hfSchedulerLabel: "Hires Scheduler (Optional)",
   controlNetProcessedPreviewLabel: "Preprocessor Output",
   selectModelPlaceholder: "Select Model...",
+  enableModelMergeLabel: "Enable Model Merge",
+  modelMergeRatioLabel: "Merge Ratio",
+  enableSamplingDiscreteLabel: "Enable Discrete Sampling",
+  samplingTypeLabel: "Sampling Type",
+  zsnrLabel: "ZSNR",
 };
 
 export const DEFAULT_THUMB_SRC =
@@ -145,6 +150,13 @@ export const anyLineStyleOptions = [
   { value: "lineart_realistic", label: LANG.anyLineStyleRealistic },
   { value: "lineart_anime", label: LANG.anyLineStyleAnime },
   { value: "manga_line", label: LANG.anyLineStyleManga },
+];
+
+export const samplingTypeOptions = [
+  { value: "eps", label: "eps" },
+  { value: "v_prediction", label: "v_prediction" },
+  { value: "lcm", label: "lcm" },
+  { value: "x0", label: "x0" },
 ];
 
 export const MAX_SEED = 4294967295;

@@ -30,8 +30,13 @@ const COMFYUI_MODELS_CHECKPOINT_PATH = path.join(COMFYUI_BASE_PATH, 'models', 'c
 const COMFYUI_MODELS_LORA_PATH = path.join(COMFYUI_BASE_PATH, 'models', 'loras');
 const COMFYUI_MODELS_CONTROLNET_PATH = path.join(COMFYUI_BASE_PATH, 'models', 'controlnet');
 const COMFYUI_MODELS_CLIP_VISION_PATH = path.join(COMFYUI_BASE_PATH, 'models', 'clip_vision');
+const COMFYUI_OUTPUT_PATH = path.join(COMFYUI_BASE_PATH, 'output');
 const PLACEHOLDER_PATH_SEGMENT = "R:\\Path\\To\\Your\\ComfyUI"; // This check is now less critical but fine to keep
 app.use(cors());
+app.use(express.json());
+
+// Serve static files from ComfyUI output folder for gallery
+app.use('/output-images', express.static(COMFYUI_OUTPUT_PATH));
 
 // Helper function to recursively get files
 const getAllFiles = (dirPath, originalPath = dirPath, arrayOfFiles = []) => {
@@ -51,8 +56,8 @@ const getAllFiles = (dirPath, originalPath = dirPath, arrayOfFiles = []) => {
         // The fix was to only skip subdirs named 'thumb'.
         // Let's ensure this getAllFiles doesn't prematurely skip a category named 'thumb' for checkpoints.
         if (path.basename(fullPath).toLowerCase() === 'thumb' && dirPath.startsWith(COMFYUI_MODELS_LORA_PATH)) {
-            console.log(`[getAllFiles] Skipping LoRA thumb directory: ${fullPath}`);
-            return; // Only skip 'thumb' if it's within the LoRA base path structure.
+          console.log(`[getAllFiles] Skipping LoRA thumb directory: ${fullPath}`);
+          return; // Only skip 'thumb' if it's within the LoRA base path structure.
         }
         getAllFiles(fullPath, originalPath, arrayOfFiles);
       } else {
@@ -145,74 +150,74 @@ app.get("/api/get-loras", async (req, res) => {
 
 // Endpoint for Checkpoint Models
 app.get("/api/get-models", async (req, res) => {
-    console.log(`[${new Date().toISOString()}] Received request for /api/get-models (checkpoints)`);
-    if (
-        !COMFYUI_MODELS_CHECKPOINT_PATH ||
-        COMFYUI_MODELS_CHECKPOINT_PATH.includes(PLACEHOLDER_PATH_SEGMENT) ||
-        COMFYUI_MODELS_CHECKPOINT_PATH.trim() === ""
-    ) {
-        const errorMessage = "COMFYUI_MODELS_CHECKPOINT_PATH is not configured correctly in server.js.";
-        console.error(`[Models] ${errorMessage}`);
-        return res.status(500).json({ error: "Server configuration error", message: errorMessage });
+  console.log(`[${new Date().toISOString()}] Received request for /api/get-models (checkpoints)`);
+  if (
+    !COMFYUI_MODELS_CHECKPOINT_PATH ||
+    COMFYUI_MODELS_CHECKPOINT_PATH.includes(PLACEHOLDER_PATH_SEGMENT) ||
+    COMFYUI_MODELS_CHECKPOINT_PATH.trim() === ""
+  ) {
+    const errorMessage = "COMFYUI_MODELS_CHECKPOINT_PATH is not configured correctly in server.js.";
+    console.error(`[Models] ${errorMessage}`);
+    return res.status(500).json({ error: "Server configuration error", message: errorMessage });
+  }
+
+  try {
+    if (!fs.existsSync(COMFYUI_MODELS_CHECKPOINT_PATH)) {
+      const errorMessage = `Checkpoint models directory not found: "${COMFYUI_MODELS_CHECKPOINT_PATH}".`;
+      console.error(`[Models] ${errorMessage}`);
+      return res.status(500).json({ error: "Directory not found", message: errorMessage, path: COMFYUI_MODELS_CHECKPOINT_PATH });
     }
 
+    console.log(`[Models] Scanning directory: ${COMFYUI_MODELS_CHECKPOINT_PATH}`);
+    const modelFilePaths = getAllFiles(COMFYUI_MODELS_CHECKPOINT_PATH);
+    const modelExtensions = [".safetensors", ".ckpt", ".pt"];
+    const filteredModelFilePaths = modelFilePaths.filter((file) =>
+      modelExtensions.some((ext) => file.toLowerCase().endsWith(ext))
+    );
+    console.log(`[Models] Found ${filteredModelFilePaths.length} potential checkpoint files from filesystem.`);
+    console.log("[Models] Filesystem checkpoint paths (first 5):", JSON.stringify(filteredModelFilePaths.slice(0, 5), null, 2));
+
+
+    const modelThumbnailsFromDb = new Map();
     try {
-        if (!fs.existsSync(COMFYUI_MODELS_CHECKPOINT_PATH)) {
-            const errorMessage = `Checkpoint models directory not found: "${COMFYUI_MODELS_CHECKPOINT_PATH}".`;
-            console.error(`[Models] ${errorMessage}`);
-            return res.status(500).json({ error: "Directory not found", message: errorMessage, path: COMFYUI_MODELS_CHECKPOINT_PATH });
-        }
-        
-        console.log(`[Models] Scanning directory: ${COMFYUI_MODELS_CHECKPOINT_PATH}`);
-        const modelFilePaths = getAllFiles(COMFYUI_MODELS_CHECKPOINT_PATH);
-        const modelExtensions = [".safetensors", ".ckpt", ".pt"];
-        const filteredModelFilePaths = modelFilePaths.filter((file) =>
-            modelExtensions.some((ext) => file.toLowerCase().endsWith(ext))
-        );
-        console.log(`[Models] Found ${filteredModelFilePaths.length} potential checkpoint files from filesystem.`);
-        console.log("[Models] Filesystem checkpoint paths (first 5):", JSON.stringify(filteredModelFilePaths.slice(0,5), null, 2));
-
-
-        const modelThumbnailsFromDb = new Map();
-        try {
-            const dbResult = await dbPool.query('SELECT model_name, thumbnail_base64 FROM model_thumbnails');
-            dbResult.rows.forEach(row => {
-                modelThumbnailsFromDb.set(row.model_name, row.thumbnail_base64);
-            });
-            console.log(`[Models] Fetched ${modelThumbnailsFromDb.size} model thumbnail entries from DB.`);
-            console.log("[Models] DB Thumbnail Map keys (first 5):", JSON.stringify(Array.from(modelThumbnailsFromDb.keys()).slice(0,5), null, 2));
-        } catch (dbError) {
-            console.error("[Models] Error fetching model thumbnails from DB:", dbError.message);
-        }
-
-        const modelsWithDetails = filteredModelFilePaths.map(filePath => {
-            const thumbnail = modelThumbnailsFromDb.get(filePath) || null;
-            // Log if a specific model's thumbnail is found or not
-            // if (thumbnail) {
-            //     console.log(`[Models] Thumbnail FOUND in DB for: ${filePath}`);
-            // } else {
-            //     console.log(`[Models] Thumbnail NOT FOUND in DB for: ${filePath} (FS path). Attempted DB key: ${filePath}`);
-            // }
-            return {
-                name: filePath, 
-                thumbnail: thumbnail
-            };
-        });
-        
-        const finalList = [{ name: "default", thumbnail: null }, ...modelsWithDetails];
-
-        console.log(`[Models] Processed ${modelsWithDetails.length} checkpoint models with details. Sending to client.`);
-        console.log("[Models] Final model list being sent (first 5 with details):", JSON.stringify(finalList.slice(0,6), null, 2)); // Log default + 5 models
-        res.json(finalList);
-
-    } catch (err) {
-        console.error(`[Models] Error processing checkpoint models directory (${COMFYUI_MODELS_CHECKPOINT_PATH}):`, err.message);
-        return res.status(500).json({
-            error: "Failed to read or process checkpoint models directory.",
-            message: err.message,
-            path: COMFYUI_MODELS_CHECKPOINT_PATH,
-        });
+      const dbResult = await dbPool.query('SELECT model_name, thumbnail_base64 FROM model_thumbnails');
+      dbResult.rows.forEach(row => {
+        modelThumbnailsFromDb.set(row.model_name, row.thumbnail_base64);
+      });
+      console.log(`[Models] Fetched ${modelThumbnailsFromDb.size} model thumbnail entries from DB.`);
+      console.log("[Models] DB Thumbnail Map keys (first 5):", JSON.stringify(Array.from(modelThumbnailsFromDb.keys()).slice(0, 5), null, 2));
+    } catch (dbError) {
+      console.error("[Models] Error fetching model thumbnails from DB:", dbError.message);
     }
+
+    const modelsWithDetails = filteredModelFilePaths.map(filePath => {
+      const thumbnail = modelThumbnailsFromDb.get(filePath) || null;
+      // Log if a specific model's thumbnail is found or not
+      // if (thumbnail) {
+      //     console.log(`[Models] Thumbnail FOUND in DB for: ${filePath}`);
+      // } else {
+      //     console.log(`[Models] Thumbnail NOT FOUND in DB for: ${filePath} (FS path). Attempted DB key: ${filePath}`);
+      // }
+      return {
+        name: filePath,
+        thumbnail: thumbnail
+      };
+    });
+
+    const finalList = [{ name: "default", thumbnail: null }, ...modelsWithDetails];
+
+    console.log(`[Models] Processed ${modelsWithDetails.length} checkpoint models with details. Sending to client.`);
+    console.log("[Models] Final model list being sent (first 5 with details):", JSON.stringify(finalList.slice(0, 6), null, 2)); // Log default + 5 models
+    res.json(finalList);
+
+  } catch (err) {
+    console.error(`[Models] Error processing checkpoint models directory (${COMFYUI_MODELS_CHECKPOINT_PATH}):`, err.message);
+    return res.status(500).json({
+      error: "Failed to read or process checkpoint models directory.",
+      message: err.message,
+      path: COMFYUI_MODELS_CHECKPOINT_PATH,
+    });
+  }
 });
 
 // Endpoint for ControlNet Models (Recursive)
@@ -260,7 +265,106 @@ app.get("/api/get-clipvision-models", async (req, res) => {
 });
 
 
-app.listen(PORT, '0.0.0.0',() => {
+// ============ GALLERY ENDPOINTS ============
+
+// Get list of timestamp folders in output directory
+app.get("/api/gallery-folders", async (req, res) => {
+  console.log(`[${new Date().toISOString()}] Received request for /api/gallery-folders`);
+
+  try {
+    if (!fs.existsSync(COMFYUI_OUTPUT_PATH)) {
+      return res.status(500).json({
+        error: "Directory not found",
+        message: `Output path "${COMFYUI_OUTPUT_PATH}" does not exist.`
+      });
+    }
+
+    const items = fs.readdirSync(COMFYUI_OUTPUT_PATH, { withFileTypes: true });
+
+    // Filter for directories that look like date folders (YYYY-MM-DD format)
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+    const folders = items
+      .filter(item => item.isDirectory() && datePattern.test(item.name))
+      .map(item => {
+        const folderPath = path.join(COMFYUI_OUTPUT_PATH, item.name);
+        const stats = fs.statSync(folderPath);
+
+        // Count images in folder
+        let imageCount = 0;
+        try {
+          const folderContents = fs.readdirSync(folderPath);
+          const imageExtensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif'];
+          imageCount = folderContents.filter(file =>
+            imageExtensions.some(ext => file.toLowerCase().endsWith(ext))
+          ).length;
+        } catch (e) {
+          console.warn(`Could not count images in ${folderPath}: ${e.message}`);
+        }
+
+        return {
+          name: item.name,
+          imageCount,
+          modifiedDate: stats.mtime.toISOString()
+        };
+      })
+      .sort((a, b) => b.name.localeCompare(a.name)); // Sort by date descending
+
+    console.log(`[Gallery] Found ${folders.length} date folders`);
+    res.json(folders);
+
+  } catch (err) {
+    console.error(`[Gallery] Error listing folders:`, err.message);
+    return res.status(500).json({ error: "Failed to list gallery folders", message: err.message });
+  }
+});
+
+// Get list of images in a specific folder
+app.get("/api/gallery-images/:folder", async (req, res) => {
+  const folderName = req.params.folder;
+  console.log(`[${new Date().toISOString()}] Received request for /api/gallery-images/${folderName}`);
+
+  // Validate folder name to prevent path traversal
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (!datePattern.test(folderName)) {
+    return res.status(400).json({ error: "Invalid folder name", message: "Folder must be in YYYY-MM-DD format" });
+  }
+
+  const folderPath = path.join(COMFYUI_OUTPUT_PATH, folderName);
+
+  try {
+    if (!fs.existsSync(folderPath)) {
+      return res.status(404).json({ error: "Folder not found", message: `Folder "${folderName}" does not exist.` });
+    }
+
+    const items = fs.readdirSync(folderPath, { withFileTypes: true });
+    const imageExtensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif'];
+
+    const images = items
+      .filter(item => item.isFile() && imageExtensions.some(ext => item.name.toLowerCase().endsWith(ext)))
+      .map(item => {
+        const imagePath = path.join(folderPath, item.name);
+        const stats = fs.statSync(imagePath);
+
+        return {
+          name: item.name,
+          url: `/output-images/${folderName}/${encodeURIComponent(item.name)}`,
+          modifiedDate: stats.mtime.toISOString(),
+          size: stats.size
+        };
+      })
+      .sort((a, b) => new Date(b.modifiedDate) - new Date(a.modifiedDate)); // Sort by date descending
+
+    console.log(`[Gallery] Found ${images.length} images in ${folderName}`);
+    res.json(images);
+
+  } catch (err) {
+    console.error(`[Gallery] Error listing images in ${folderName}:`, err.message);
+    return res.status(500).json({ error: "Failed to list gallery images", message: err.message });
+  }
+});
+
+
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`ComfyUI Model API server running on http://localhost:${PORT}`);
   console.log("--- Path Configurations ---");
   console.log(`Checkpoints: ${COMFYUI_MODELS_CHECKPOINT_PATH}`);
@@ -275,7 +379,7 @@ app.listen(PORT, '0.0.0.0',() => {
     } else if (!fs.existsSync(pathValue)) {
       console.error(`ERROR: The configured ${pathName} ("${pathValue}") does not exist. The API will not be able to list these models.`);
     } else {
-        console.log(`SUCCESS: ${pathName} path ("${pathValue}") exists.`);
+      console.log(`SUCCESS: ${pathName} path ("${pathValue}") exists.`);
     }
   };
 

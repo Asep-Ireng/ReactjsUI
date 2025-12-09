@@ -134,14 +134,24 @@ export const GenerationProvider = ({ children }) => {
   const [denoisingStrengthHires, setDenoisingStrengthHires] = useState(0.4);
   const [hfSteps, setHfSteps] = useState(15);
   const [hfCfg, setHfCfg] = useState(7.0);
- 
+
   const [hfSampler, setHfSampler] = useState("");
   const [hfScheduler, setHfScheduler] = useState("");
+
+  // Model Merge State
+  const [modelMergeEnabled, setModelMergeEnabled] = useState(false);
+  const [modelMergeModel2, setModelMergeModel2] = useState("");
+  const [modelMergeRatio, setModelMergeRatio] = useState(0.5);
+
+  // Sampling Discrete State
+  const [samplingDiscreteEnabled, setSamplingDiscreteEnabled] = useState(false);
+  const [samplingType, setSamplingType] = useState("eps");
+  const [zsnrEnabled, setZsnrEnabled] = useState(false);
 
   // Effect to populate generation UI from loaded settings
   useEffect(() => {
     if (!appSettings) return;
-  console.log("appSettings", appSettings);
+    console.log("appSettings", appSettings);
     setPromptText(appSettings.custom_prompt || "");
     setPositivePromptTail(
       appSettings.api_prompt || "masterpiece, best quality, amazing quality"
@@ -176,7 +186,7 @@ export const GenerationProvider = ({ children }) => {
     } else if (modelDropdownOptions.length > 0 && modelDropdownOptions[0].value) {
       setSelectedModel(
         modelDropdownOptions.find((o) => o.value === "default")?.value ||
-          modelDropdownOptions[0].value
+        modelDropdownOptions[0].value
       );
     }
 
@@ -470,31 +480,38 @@ export const GenerationProvider = ({ children }) => {
     const finalCombinedPrompt = promptParts.join(", ");
     setFinalPromptDisplay(finalCombinedPrompt);
 
-    let model_name_for_payload = selectedModel;
-    let normalizedSelectedModel = selectedModel.replace(/\\/g, "/");
-    if (normalizedSelectedModel && normalizedSelectedModel.toLowerCase() !== "default") {
-      if (!normalizedSelectedModel.toLowerCase().startsWith("thumb/")) {
-        model_name_for_payload = `thumb\\${normalizedSelectedModel.replace(/\//g, "\\")}`;
-      } else {
-        model_name_for_payload = normalizedSelectedModel.replace(/\//g, "\\");
+    const processModelPath = (modelVal) => {
+      if (!modelVal || modelVal.toLowerCase() === "default") return "default";
+      let model_name_for_payload = modelVal;
+      let normalizedModel = modelVal.replace(/\\/g, "/");
+      if (normalizedModel) {
+        if (!normalizedModel.toLowerCase().startsWith("thumb/")) {
+          model_name_for_payload = `thumb\\${normalizedModel.replace(/\//g, "\\")}`;
+        } else {
+          model_name_for_payload = normalizedModel.replace(/\//g, "\\");
+        }
       }
-    } else if (selectedModel.toLowerCase() === "default") {
-      model_name_for_payload = "default";
-    }
+      return model_name_for_payload;
+    };
+
+    const model_name_for_payload = processModelPath(selectedModel);
+    const model2_name_for_payload = processModelPath(modelMergeModel2);
 
     setInformationDisplay(
-      `Model: ${model_name_for_payload}\nSeed: ${seed}\nClipSkip: ${clipskip}\nSampler: ${selectedSampler} / Scheduler: ${selectedScheduler}\nDimensions: ${width}x${height}\nSteps: ${steps}, CFG: ${cfg}\nHi-res Fix: ${
-        enableHiresFix
-          ? `Enabled (Upscaler: ${selectedUpscaler}, Up By: ${upscaleBy.toFixed(1)}, Denoise: ${denoisingStrengthHires.toFixed(5)}, Steps: ${hfSteps}, CFG: ${hfCfg})`
-          : "Disabled"
-      } \nControlNet: ${
-        controlNetEnabled
-          ? `Enabled (Model: ${selectedControlNetModel}, Strength: ${controlNetStrength.toFixed(5)})`
-          : "Disabled"
-      } \nCLIP Vision: ${
-        clipVisionEnabled
+      `Model: ${model_name_for_payload}\nSeed: ${seed}\nClipSkip: ${clipskip}\nSampler: ${selectedSampler} / Scheduler: ${selectedScheduler}\nDimensions: ${width}x${height}\nSteps: ${steps}, CFG: ${cfg}\nHi-res Fix: ${enableHiresFix
+        ? `Enabled (Upscaler: ${selectedUpscaler}, Up By: ${upscaleBy.toFixed(1)}, Denoise: ${denoisingStrengthHires.toFixed(5)}, Steps: ${hfSteps}, CFG: ${hfCfg})`
+        : "Disabled"
+      } \nControlNet: ${controlNetEnabled
+        ? `Enabled (Model: ${selectedControlNetModel}, Strength: ${controlNetStrength.toFixed(5)})`
+        : "Disabled"
           ? `Enabled (Model: ${selectedClipVisionModel}, Strength: ${clipVisionStrength.toFixed(2)})`
           : "Disabled"
+      } \nModel Merge: ${modelMergeEnabled
+        ? `Enabled (Model 2: ${model2_name_for_payload}, Ratio: ${modelMergeRatio.toFixed(2)})`
+        : "Disabled"
+      } \nSampling Discrete: ${samplingDiscreteEnabled
+        ? `Enabled (Type: ${samplingType}, ZSNR: ${zsnrEnabled})`
+        : "Disabled"
       }`
     );
     setIsGenerating(true);
@@ -546,6 +563,12 @@ export const GenerationProvider = ({ children }) => {
       hf_cfg: enableHiresFix ? parseFloat(hfCfg) : null,
       hf_sampler: enableHiresFix && hfSampler ? hfSampler : null,
       hf_scheduler: enableHiresFix && hfScheduler ? hfScheduler : null,
+      model_merge_enabled: modelMergeEnabled,
+      model2_name: modelMergeEnabled ? model2_name_for_payload : null,
+      model_merge_ratio: modelMergeEnabled ? parseFloat(modelMergeRatio) : 0.5,
+      sampling_discrete_enabled: samplingDiscreteEnabled,
+      sampling_type: samplingDiscreteEnabled ? samplingType : "eps",
+      zsnr_enabled: samplingDiscreteEnabled ? zsnrEnabled : false,
     };
     console.log("payload →", payload);
 
@@ -634,6 +657,8 @@ export const GenerationProvider = ({ children }) => {
     clipVisionRefImageBase64, clipVisionStrength, enableHiresFix,
     webuiSaveRedirect, selectedUpscaler, selectedColorTransfer,
     upscaleBy, denoisingStrengthHires, hfSteps, hfCfg, hfSampler, hfScheduler,
+    modelMergeEnabled, modelMergeModel2, modelMergeRatio,
+    samplingDiscreteEnabled, samplingType, zsnrEnabled,
     // Setters & Handlers
     setPromptText, setPositivePromptTail, setNegativePromptText,
     setSelectedCharacter1, setSelectedCharacter2, setSelectedCharacter3,
@@ -649,6 +674,8 @@ export const GenerationProvider = ({ children }) => {
     setWebuiSaveRedirect, setSelectedUpscaler, setSelectedColorTransfer,
     setUpscaleBy, setDenoisingStrengthHires, setHfSteps, setHfCfg,
     setHfSampler, setHfScheduler,
+    setModelMergeEnabled, setModelMergeModel2, setModelMergeRatio,
+    setSamplingDiscreteEnabled, setSamplingType, setZsnrEnabled,
     handleFileChange, handleAddLora, handleRemoveLora, handleLoraChange,
     handleClearControlNetRefImage, handleControlNetRefImageChange,
     handleClipVisionRefImageChange, handlePreviewPreprocessors,
