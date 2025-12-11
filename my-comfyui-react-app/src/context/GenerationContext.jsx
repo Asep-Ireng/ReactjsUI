@@ -116,6 +116,9 @@ export const GenerationProvider = ({ children }) => {
     useState(null);
   const [controlNetRefImageDimensions, setControlNetRefImageDimensions] =
     useState(null);
+  const [controlNetUpscaleModel, setControlNetUpscaleModel] = useState("None");
+  const [controlNetUpscaleFactor, setControlNetUpscaleFactor] = useState(1.0);
+  const [controlNetUpscaleMethod, setControlNetUpscaleMethod] = useState("nearest-exact");
 
   // CLIP Vision State
   const [clipVisionEnabled, setClipVisionEnabled] = useState(false);
@@ -425,6 +428,8 @@ export const GenerationProvider = ({ children }) => {
         ? selectedAnyLineStyle
         : undefined,
       cn_global_preprocessor_resolution: cnGlobalPreprocessorResolution,
+      controlnet_upscale_model:
+        controlNetUpscaleModel === "None" ? undefined : controlNetUpscaleModel, // NEW
     };
     try {
       const response = await fetch(
@@ -546,6 +551,9 @@ export const GenerationProvider = ({ children }) => {
       selected_anyline_style: controlNetEnabled && controlNetPreprocessors.anyLine ? selectedAnyLineStyle : undefined,
       controlnet_ref_image_base64: controlNetEnabled ? controlNetRefImageBase64 : null,
       controlnet_strength: controlNetEnabled ? parseFloat(controlNetStrength) : null,
+      controlnet_upscale_model: controlNetEnabled && controlNetUpscaleModel !== "None" ? controlNetUpscaleModel : null,
+      controlnet_upscale_factor: controlNetEnabled ? parseFloat(controlNetUpscaleFactor) : 1.0,
+      controlnet_upscale_method: controlNetEnabled ? controlNetUpscaleMethod : "nearest-exact",
       cn_anyline_resolution: controlNetEnabled && controlNetPreprocessors.anyLine ? cnGlobalPreprocessorResolution : undefined,
       cn_depth_resolution: controlNetEnabled && controlNetPreprocessors.depth ? cnGlobalPreprocessorResolution : undefined,
       cn_openpose_resolution: controlNetEnabled && controlNetPreprocessors.openPose ? cnGlobalPreprocessorResolution : undefined,
@@ -652,7 +660,8 @@ export const GenerationProvider = ({ children }) => {
     controlNetRefImageBase64, controlNetStrength, controlNetPreprocessors,
     selectedAnyLineStyle, cnGlobalPreprocessorResolution,
     controlNetProcessedPreviewImage, isGeneratingPreprocessorPreview,
-    preprocessorPreviewError, controlNetRefImageDimensions,
+    preprocessorPreviewError, controlNetRefImageDimensions, controlNetUpscaleModel,
+    controlNetUpscaleFactor, controlNetUpscaleMethod,
     clipVisionEnabled, selectedClipVisionModel, clipVisionRefImage,
     clipVisionRefImageBase64, clipVisionStrength, enableHiresFix,
     webuiSaveRedirect, selectedUpscaler, selectedColorTransfer,
@@ -668,7 +677,8 @@ export const GenerationProvider = ({ children }) => {
     setSelectedLoras, setControlNetEnabled, setSelectedControlNetModel,
     setControlNetRefImage, setControlNetRefImageBase64, setControlNetStrength,
     setControlNetPreprocessors, setSelectedAnyLineStyle,
-    setCnGlobalPreprocessorResolution, setControlNetRefImageDimensions,
+    setCnGlobalPreprocessorResolution, setControlNetRefImageDimensions, setControlNetUpscaleModel,
+    setControlNetUpscaleFactor, setControlNetUpscaleMethod,
     setClipVisionEnabled, setSelectedClipVisionModel, setClipVisionRefImage,
     setClipVisionRefImageBase64, setClipVisionStrength, setEnableHiresFix,
     setWebuiSaveRedirect, setSelectedUpscaler, setSelectedColorTransfer,

@@ -154,6 +154,46 @@ class ControlNetModule(BaseModule):
         )
         current_image_ref = ctx.get_ref(load_img_id, 0)
         
+        # Optional: Upscale Reference Image
+        cn_upscale_model = params.get("controlnet_upscale_model")
+        if cn_upscale_model and cn_upscale_model != "None":
+            # Load Upscale Model
+            upscale_loader_id, _ = ctx.add_node(
+                "UpscaleModelLoader",
+                {"model_name": cn_upscale_model},
+                "CN Upscale Model Loader"
+            )
+            upscale_model_ref = ctx.get_ref(upscale_loader_id, 0)
+            
+            # Apply Upscale
+            upscale_id, _ = ctx.add_node(
+                "ImageUpscaleWithModel",
+                {
+                    "upscale_model": upscale_model_ref,
+                    "image": current_image_ref,
+                },
+                "CN Image Upscale"
+            )
+            current_image_ref = ctx.get_ref(upscale_id, 0)
+            print(f"[ControlNetModule] Upscaled reference image with {cn_upscale_model}")
+        
+        # Optional: Resize Reference Image (applied after model upscale if any)
+        cn_upscale_factor = params.get("controlnet_upscale_factor", 1.0)
+        cn_upscale_method = params.get("controlnet_upscale_method", "nearest-exact")
+        
+        if cn_upscale_factor != 1.0:
+            scale_id, _ = ctx.add_node(
+                "ImageScaleBy",
+                {
+                    "image": current_image_ref,
+                    "upscale_method": cn_upscale_method,
+                    "scale_by": cn_upscale_factor,
+                },
+                "CN Rescale Ref"
+            )
+            current_image_ref = ctx.get_ref(scale_id, 0)
+            print(f"[ControlNetModule] Rescaled reference image by {cn_upscale_factor}x using {cn_upscale_method}")
+
         # Apply preprocessor chain
         if preprocessors.get("anyLine"):
             style = params.get("selected_anyline_style", "lineart_realistic")

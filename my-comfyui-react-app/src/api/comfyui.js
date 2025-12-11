@@ -100,6 +100,20 @@ export function fetchSchedulers() {
 }
 
 /**
+ * Fetches the list of upscale models from ComfyUI (via backend proxy).
+ */
+export function fetchUpscaleModels() {
+  console.log(`Fetching upscale models from: ${GENERATE_API_BASE}/get-upscale-models`);
+  return axios
+    .get(`${GENERATE_API_BASE}/get-upscale-models`)
+    .then((r) => r.data.models)
+    .catch((error) => {
+      console.error("Error fetching upscale models:", error);
+      throw error;
+    });
+}
+
+/**
  * Generates an image via an HTTP POST request.
  * Note: Your App.jsx uses WebSockets for generation. This function might be for a different purpose.
  */

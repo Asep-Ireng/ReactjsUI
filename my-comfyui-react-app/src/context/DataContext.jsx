@@ -17,8 +17,9 @@ import {
   fetchClipVisionModels,
   fetchSamplers,
   fetchSchedulers,
+  fetchUpscaleModels,
 } from "../api/comfyui";
-import { LANG, DEFAULT_THUMB_SRC } from "../utils/constants";
+import { LANG, DEFAULT_THUMB_SRC, UPSCALE_MODELS } from "../utils/constants";
 
 // --- File Path Constants ---
 const CSV_CHARACTER_FILE_PATH = "/data/wai_characters.csv";
@@ -43,6 +44,7 @@ export const DataProvider = ({ children }) => {
   const [rawClipVisionModelData, setRawClipVisionModelData] = useState(null);
   const [rawSamplerData, setRawSamplerData] = useState(null);
   const [rawSchedulerData, setRawSchedulerData] = useState(null);
+  const [rawUpscaleModelData, setRawUpscaleModelData] = useState(null); // NEW
   const [appSettings, setAppSettings] = useState(null);
   const [dataLoadingError, setDataLoadingError] = useState(null);
 
@@ -86,6 +88,7 @@ export const DataProvider = ({ children }) => {
           cvModels,
           samplersRes,
           schedulersRes,
+          modelsRes, // NEW variable name
         ] = await Promise.all([
           fetch(CSV_CHARACTER_FILE_PATH),
           fetch(JSON_CHARACTER_FILE_PATH),
@@ -99,6 +102,7 @@ export const DataProvider = ({ children }) => {
           fetchClipVisionModels(),
           fetchSamplers(),
           fetchSchedulers(),
+          fetchUpscaleModels(), // NEW
         ]);
 
         // This is a better way to handle multiple fetches
@@ -127,6 +131,7 @@ export const DataProvider = ({ children }) => {
         setRawClipVisionModelData(cvModels);
         setRawSamplerData(samplersRes);
         setRawSchedulerData(schedulersRes);
+        setRawUpscaleModelData(modelsRes); // Note: destructured variable needs to be added to Promise.all result array
       } catch (error) {
         console.error("Error during initial data fetch:", error);
         // Fallback for samplers/schedulers if API fails (optional, or just empty)
@@ -231,21 +236,18 @@ export const DataProvider = ({ children }) => {
   }, [rawSchedulerData]);
 
   useEffect(() => {
-    if (appSettings) {
-      /* Samplers and Schedulers are now fetched dynamically */
-      if (appSettings.api_hf_upscaler_list) {
-        const upscalers = appSettings.api_hf_upscaler_list.map((u) => ({
-          label: u,
-          value: u,
-        }));
-        setUpscalerOptions(
-          upscalers.length > 0
-            ? upscalers
-            : [{ label: "No upscalers found", value: "" }]
-        );
-      }
-    }
-  }, [appSettings]);
+    // Use the hardcoded list directly
+    const upscalers = UPSCALE_MODELS.map((u) => ({
+      label: u,
+      value: u,
+    }));
+
+    setUpscalerOptions(
+      upscalers.length > 0
+        ? [{ label: "None", value: "" }, ...upscalers]
+        : [{ label: "None", value: "" }]
+    );
+  }, []);
 
   // --- Memoized computations for character and action options ---
   const characterDropdownOptions = useMemo(() => {

@@ -25,7 +25,12 @@ class ControlNetPreviewRequest(BaseModel):
     cn_anyline_resolution: Optional[int] = None
     cn_depth_resolution: Optional[int] = None
     cn_openpose_resolution: Optional[int] = None
+    cn_openpose_resolution: Optional[int] = None
     cn_canny_resolution: Optional[int] = None
+    # Upscale settings
+    controlnet_upscale_model: Optional[str] = None
+    controlnet_upscale_factor: Optional[float] = 1.0
+    controlnet_upscale_method: Optional[str] = "nearest-exact"
 from comfyui import run_controlnet_preview_only # We'll create this function
 
 
@@ -79,12 +84,15 @@ class GenerateRequest(BaseModel):
     controlnet_model_name: Optional[str] = None
     controlnet_ref_image_base64: Optional[str] = None
     controlnet_strength: Optional[float] = Field(default=1.0) # Changed to Optional
+    controlnet_upscale_model: Optional[str] = None
+    controlnet_upscale_factor: Optional[float] = 1.0
+    controlnet_upscale_method: Optional[str] = "nearest-exact"
     controlnet_preprocessors: Dict[str, bool] = Field(
         default_factory=lambda: {
             "lineart": True, "anyLine": True, "depth": True, "openPose": True, "canny": True
         }
     )
-    selected_lineart_style: str = "lineart_realistic" # Default if not sent
+    selected_anyline_style: str = "lineart_realistic" # Default if not sent
 
     # ControlNet Preprocessor specific settings
     cn_anyline_resolution: Optional[int] = 1152
@@ -186,7 +194,36 @@ async def get_schedulers():
     except Exception as e:
         print(f"ERROR fetch schedulers: {e}")
         return {"error": str(e)}
+
+@app.get("/api/get-anyline-styles")
+async def get_anyline_styles():
+    print("INFO: FastAPI /api/get-anyline-styles called")
+    try:
+        # Fetch directly from ComfyUI
+        with request.urlopen(f"http://192.168.50.106:8188/object_info/AnyLineArtPreprocessor_aux") as response:
+            data = json.loads(response.read())
+            # AnyLineArtPreprocessor_aux -> input -> required -> merge_with_lineart -> [0] is the list
+            styles = data['AnyLineArtPreprocessor_aux']['input']['required']['merge_with_lineart'][0]
+            return {"styles": styles}
+    except Exception as e:
+        print(f"ERROR fetch anyline styles: {e}")
+        return {"error": str(e)}
     
+    
+@app.get("/api/get-upscale-models")
+async def get_upscale_models():
+    print("INFO: FastAPI /api/get-upscale-models called")
+    try:
+        # Fetch directly from ComfyUI
+        with request.urlopen(f"http://192.168.50.106:8188/object_info/UpscaleModelLoader") as response:
+            data = json.loads(response.read())
+            # UpscaleModelLoader -> input -> required -> model_name -> [0] is the list
+            models = data['UpscaleModelLoader']['input']['required']['model_name'][0]
+            return {"models": models}
+    except Exception as e:
+        print(f"ERROR fetch upscale models: {e}")
+        return {"error": str(e)}
+
 @app.websocket("/api/generate-ws")
 async def generate_ws(websocket: WebSocket):
     await websocket.accept()

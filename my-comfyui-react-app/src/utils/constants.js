@@ -159,4 +159,14 @@ export const samplingTypeOptions = [
   { value: "x0", label: "x0" },
 ];
 
-export const MAX_SEED = 4294967295;
+// Add this list to src/utils/constants.js
+export const UPSCALE_MODELS = [
+  "4x-UltraSharp.pth",
+  "RealESRGAN_x4.pth",
+  "RealESRGAN_x4plus.pth",
+  "RealESRGAN_x4plus_anime_6B.pth",
+  "ltxv-spatial-upscaler-0.9.7.safetensors",
+  "ltxv-temporal-upscaler-0.9.7.safetensors"
+];
+
+export const MAX_SEED = 429496729524512;
