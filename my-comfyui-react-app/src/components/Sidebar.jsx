@@ -1,9 +1,10 @@
 import React from 'react';
-import { Palette, Image, Settings } from 'lucide-react';
+import { Palette, Image, Settings, Wand2 } from 'lucide-react';
 
 const Sidebar = ({ activeView, onViewChange }) => {
     const navItems = [
         { id: 'generation', icon: Palette, label: 'Generation', tooltip: 'Image Generation' },
+        { id: 'editor', icon: Wand2, label: 'Editor', tooltip: 'AI Editor (Nano Banana)' },
         { id: 'gallery', icon: Image, label: 'Gallery', tooltip: 'Output Gallery' },
         { id: 'settings', icon: Settings, label: 'Settings', tooltip: 'Settings' },
     ];

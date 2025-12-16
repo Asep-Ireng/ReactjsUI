@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Base URL for the Python/WebSocket backend (if generateImage POST endpoint is there)
-const GENERATE_API_BASE = "http://192.168.50.106:8000/api";
+export const GENERATE_API_BASE = "http://192.168.50.106:8000/api";
 
 // Base URL for the Node.js server that lists models, LoRAs, etc.
 const MODEL_LIST_API_BASE = "http://192.168.50.106:3001/api";

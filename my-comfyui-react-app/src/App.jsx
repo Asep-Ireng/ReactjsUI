@@ -8,6 +8,7 @@ import ImageModal from "./components/ImageModal.jsx";
 import ModelRail from "./components/ModelRail.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import GalleryView from "./components/GalleryView.jsx";
+import EditorView from "./components/EditorView.jsx";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { GripVertical } from "lucide-react";
 import "./App.css";
@@ -68,6 +69,8 @@ const AppContent = () => {
         return <GalleryView />;
       case 'settings':
         return <div className="settings-placeholder">Settings coming soon...</div>;
+      case 'editor':
+        return <EditorView />;
       case 'generation':
       default:
         return <GenerationView />;

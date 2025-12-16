@@ -1,0 +1,148 @@
+/* From Uiverse.io by SelfMadeSystem */
+.scifi-button-container {
+    position: relative;
+    /* margin: 0 2em; Removed margin to fit layout */
+    width: 100%;
+    /* Adapting to full width or auto */
+    display: flex;
+    justify-content: center;
+}
+
+.scifi-button-border {
+    position: absolute;
+    padding: 3px;
+    inset: 0;
+    background: #0005;
+    border-radius: inherit;
+    clip-path: path("M 90 0 C 121 0 126 5 126 33 C 126 61 121 66 90 66 L 33 66 C 5 66 0 61 0 33 C 0 5 5 0 33 0 Z"
+        );
+    /* Centering the shape if container is larger */
+    width: 126px;
+    height: 66px;
+    margin: auto;
+    pointer-events: none;
+}
+
+.scifi-button {
+    justify-content: center;
+    align-items: center;
+    border: none;
+    border-radius: 0.875em;
+    clip-path: path("M 90 0 C 115 0 120 5 120 30 C 120 55 115 60 90 60 L 30 60 C 5 60 0 55 0 30 C 0 5 5 0 30 0 Z"
+        );
+    width: 120px;
+    height: 60px;
+    background: #111215;
+    display: flex;
+    flex-direction: column;
+    color: #fff;
+    overflow: hidden;
+    margin: auto;
+    /* Center in container */
+    position: relative;
+    z-index: 2;
+}
+
+.scifi-real-button {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+}
+
+.scifi-backdrop {
+    position: absolute;
+    inset: -9900%;
+    background: radial-gradient(circle at 50% 50%,
+            #0000 0,
+            #0000 20%,
+            #111111aa 50%);
+    background-size: 3px 3px;
+    z-index: -1;
+}
+
+.scifi-spin {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    opacity: 0.5;
+    overflow: hidden;
+    transition: 0.3s;
+}
+
+.scifi-button:hover .scifi-spin,
+.scifi-button:focus-within .scifi-spin {
+    opacity: 1;
+}
+
+.scifi-spin-blur {
+    filter: blur(2em);
+}
+
+.scifi-spin-intense {
+    inset: -0.125em;
+    filter: blur(0.25em);
+    border-radius: 0.75em;
+}
+
+.scifi-spin-inside {
+    inset: -2px;
+    border-radius: inherit;
+    filter: blur(2px);
+    z-index: 0;
+}
+
+.scifi-spin::before {
+    content: "";
+    position: absolute;
+    inset: -150%;
+    background: conic-gradient(from 0deg, transparent 0 30%, #a855f7 45% 55%, transparent 70% 100%);
+    /* Purple theme adaptation */
+    animation:
+        speen 4s linear infinite;
+    animation-play-state: paused;
+}
+
+.scifi-button:hover .scifi-spin::before {
+    animation-play-state: running;
+}
+
+/* Different gradients for layers */
+.scifi-spin-blur::before {
+    background: linear-gradient(90deg, #f50 30%, #0000 50%, #05f 70%);
+}
+
+.scifi-spin-intense::before {
+    background: linear-gradient(90deg, #f95 20%, #0000 45% 55%, #59f 80%);
+}
+
+.scifi-spin-inside::before {
+    background: linear-gradient(90deg, #fc9 30%, #0000 45% 55%, #9cf 70%);
+}
+
+@keyframes speen {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes woah {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(0.75);
+    }
+}
