@@ -581,7 +581,7 @@ export const GenerationProvider = ({ children }) => {
     console.log("payload →", payload);
 
     try {
-      const ws = new window.WebSocket("ws://localhost:8000/api/generate-ws");
+      const ws = new window.WebSocket(`ws://${window.location.hostname}:8000/api/generate-ws`);
       ws.onopen = () => ws.send(JSON.stringify(payload));
       ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);

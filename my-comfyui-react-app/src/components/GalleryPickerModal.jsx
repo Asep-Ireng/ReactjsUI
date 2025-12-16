@@ -17,7 +17,7 @@ const GalleryPickerModal = ({ isOpen, onClose, onSelectImage }) => {
     // In comfyui.js, MODEL_LIST_API_BASE is port 3001. 
     // Let's use the explicit 3001 port for now to match GalleryView's behavior.
 
-    const GALLERY_API = "http://192.168.50.106:3001";
+    const GALLERY_API = `http://${window.location.hostname}:3001`;
 
     useEffect(() => {
         if (isOpen) {

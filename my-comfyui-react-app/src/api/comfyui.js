@@ -1,10 +1,11 @@
 import axios from "axios";
 
 // Base URL for the Python/WebSocket backend (if generateImage POST endpoint is there)
-export const GENERATE_API_BASE = "http://192.168.50.106:8000/api";
+// Uses window.location.hostname to support access from specific IPs or localhost
+export const GENERATE_API_BASE = `http://${window.location.hostname}:8000/api`;
 
 // Base URL for the Node.js server that lists models, LoRAs, etc.
-const MODEL_LIST_API_BASE = "http://192.168.50.106:3001/api";
+const MODEL_LIST_API_BASE = `http://${window.location.hostname}:3001/api`;
 
 /**
  * Fetches the list of checkpoint models.

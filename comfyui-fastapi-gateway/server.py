@@ -148,7 +148,8 @@ async def generate(req: GenerateRequest):
 class ExternalGenerateRequest(BaseModel):
     prompt: str
     model: str = "flash" # 'flash' or 'pro'
-    image: Optional[str] = None # Base64
+    images: Optional[List[str]] = None # List of Base64 images (supports multiple references)
+    image: Optional[str] = None # DEPRECATED: Single image for backward compatibility
     parameters: Optional[Dict[str, Any]] = None # New params (AR, Res, Temp)
 
 @app.post("/api/external/generate")
@@ -158,12 +159,19 @@ async def generate_external(req: ExternalGenerateRequest):
     from gemini_service import generate_image_gemini, reset_gemini_chat
     
     try:
+        # Merge images from both new 'images' field and deprecated 'image' field
+        image_inputs = []
+        if req.images:
+            image_inputs.extend(req.images)
+        if req.image and req.image not in image_inputs:  # Backward compat
+            image_inputs.append(req.image)
+        
         # Call the actual service
         # We pass parameters (aspect ratio, etc)
         result = await generate_image_gemini(
             prompt=req.prompt,
             model_alias=req.model,
-            image_input=req.image,
+            image_inputs=image_inputs if image_inputs else None,
             parameters=req.parameters
         )
         
@@ -241,7 +249,7 @@ async def get_samplers():
     print("INFO: FastAPI /api/get-samplers called")
     try:
         # Fetch directly from ComfyUI
-        with request.urlopen(f"http://192.168.50.106:8188/object_info/KSampler") as response:
+        with request.urlopen(f"http://localhost:8188/object_info/KSampler") as response:
             data = json.loads(response.read())
             # KSampler -> input -> required -> sampler_name -> [0] is the list
             samplers = data['KSampler']['input']['required']['sampler_name'][0]
@@ -255,7 +263,7 @@ async def get_schedulers():
     print("INFO: FastAPI /api/get-schedulers called")
     try:
         # Fetch directly from ComfyUI
-        with request.urlopen(f"http://192.168.50.106:8188/object_info/KSampler") as response:
+        with request.urlopen(f"http://localhost:8188/object_info/KSampler") as response:
             data = json.loads(response.read())
             # KSampler -> input -> required -> scheduler -> [0] is the list
             schedulers = data['KSampler']['input']['required']['scheduler'][0]
@@ -269,7 +277,7 @@ async def get_anyline_styles():
     print("INFO: FastAPI /api/get-anyline-styles called")
     try:
         # Fetch directly from ComfyUI
-        with request.urlopen(f"http://192.168.50.106:8188/object_info/AnyLineArtPreprocessor_aux") as response:
+        with request.urlopen(f"http://localhost:8188/object_info/AnyLineArtPreprocessor_aux") as response:
             data = json.loads(response.read())
             # AnyLineArtPreprocessor_aux -> input -> required -> merge_with_lineart -> [0] is the list
             styles = data['AnyLineArtPreprocessor_aux']['input']['required']['merge_with_lineart'][0]
@@ -284,7 +292,7 @@ async def get_upscale_models():
     print("INFO: FastAPI /api/get-upscale-models called")
     try:
         # Fetch directly from ComfyUI
-        with request.urlopen(f"http://192.168.50.106:8188/object_info/UpscaleModelLoader") as response:
+        with request.urlopen(f"http://localhost:8188/object_info/UpscaleModelLoader") as response:
             data = json.loads(response.read())
             # UpscaleModelLoader -> input -> required -> model_name -> [0] is the list
             models = data['UpscaleModelLoader']['input']['required']['model_name'][0]
@@ -417,3 +425,8 @@ async def generate_ws(websocket: WebSocket):
                 print("INFO: FastAPI WebSocket connection explicitly closed in finally block.")
         except Exception:
             pass
+# ... (end of existing code)
+if __name__ == "__main__":
+    import uvicorn
+    # Allow running directly with python server.py to bind to all interfaces
+    uvicorn.run(app, host="0.0.0.0", port=8000)

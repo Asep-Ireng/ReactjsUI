@@ -17,8 +17,8 @@ const EditorView = () => {
     const [thinkingLog, setThinkingLog] = useState('');
     const thinkingLogRef = useRef(null);
 
-    // Input Image State
-    const [inputImage, setInputImage] = useState(null); // base64 or URL
+    // Input Image State - Now supports MULTIPLE images
+    const [inputImages, setInputImages] = useState([]); // Array of base64 or URL
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
     const [isDoodleMode, setIsDoodleMode] = useState(false);
 
@@ -30,9 +30,7 @@ const EditorView = () => {
     const [resolution, setResolution] = useState('1024x1024'); // Default 1K
     const [temperature, setTemperature] = useState(1.0);
 
-    const ASPECT_RATIOS = [
-        "1:1", "9:16", "16:9", "3:4", "4:3", "3:2", "2:3", "5:4", "4:5", "21:9"
-    ];
+    // ASPECT_RATIOS moved below to include Auto option
 
     const RESOLUTIONS = [
         { label: "1K", value: "1024x1024" },
@@ -48,7 +46,7 @@ const EditorView = () => {
     }, [thinkingLog]);
 
     const handleGenerate = async () => {
-        if (!prompt && !inputImage && !doodleData) return;
+        if (!prompt && inputImages.length === 0 && !doodleData) return;
 
         setIsGenerating(true);
         setError(null);
@@ -56,14 +54,17 @@ const EditorView = () => {
 
         try {
             // Prepare payload
-            // If doodle data exists, use that (it should be the composite or mask)
-            // Ideally we composites them on client or send layered data. 
-            // For now, if Doodling, send doodleData as image. Else inputImage.
+            // If doodle data exists, include it as first image
+            // Then add all reference images
+            let imagesToSend = [...inputImages];
+            if (isDoodleMode && doodleData) {
+                imagesToSend = [doodleData, ...inputImages];
+            }
 
             const payload = {
                 prompt,
                 model: selectedModel,
-                image: isDoodleMode && doodleData ? doodleData : inputImage,
+                images: imagesToSend.length > 0 ? imagesToSend : undefined,
                 parameters: {
                     aspectRatio,
                     resolution,
@@ -131,23 +132,47 @@ const EditorView = () => {
     };
 
     const handleFileUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
             const reader = new FileReader();
-            reader.onload = (ev) => setInputImage(ev.target.result);
+            reader.onload = (ev) => setInputImages(prev => [...prev, ev.target.result]);
             reader.readAsDataURL(file);
-        }
+        });
+        // Reset input so same file can be selected again
+        e.target.value = '';
     };
 
     const handleGallerySelect = (url) => {
-        setInputImage(url); // Note: DrawingCanvas might need CrossOrigin support if URL is different domain
+        setInputImages(prev => [...prev, url]); // Add to array instead of replacing
         setIsGalleryOpen(false);
+    };
+
+    const handleRemoveImage = (index) => {
+        setInputImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    // Lightbox State
+    const [lightboxImage, setLightboxImage] = useState(null);
+
+    // Canvas/Doodle Modal State
+    const [isDrawingModalOpen, setIsDrawingModalOpen] = useState(false);
+
+    // ... (keep existing state)
+
+    const ASPECT_RATIOS = [
+        "Auto", "1:1", "9:16", "16:9", "3:4", "4:3", "3:2", "2:3", "5:4", "4:5", "21:9"
+    ];
+
+    // ... (keep existing effects)
+
+    const handleClearGenerated = () => {
+        setGeneratedImage(null);
     };
 
     return (
         <div className="flex h-full text-gray-200">
             {/* Left Control Panel */}
-            <div className="w-96 border-r border-gray-700/50 p-4 flex flex-col gap-5 bg-[#1a1b26]/50 shrink-0">
+            <div className="w-96 border-r border-gray-700/50 p-4 flex flex-col gap-5 bg-[#1a1b26]/50 shrink-0 overflow-y-auto custom-scrollbar">
 
                 {/* Header */}
                 <div className="flex items-center gap-2 mb-1">
@@ -200,45 +225,68 @@ const EditorView = () => {
                     </div>
                 </div>
 
-                {/* Input Image Controls */}
+                {/* Input Image Controls - Multi-Image Support */}
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Reference Image</label>
-                        {inputImage && (
-                            <button onClick={() => { setInputImage(null); setDoodleData(null); setIsDoodleMode(false); }} className="text-xs text-red-400 hover:text-red-300">Clear</button>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                            Reference Images {inputImages.length > 0 && <span className="text-purple-400">({inputImages.length})</span>}
+                        </label>
+                        {inputImages.length > 0 && (
+                            <div className="flex gap-2">
+                                <button onClick={() => { setInputImages([]); setDoodleData(null); setIsDoodleMode(false); }} className="text-xs text-red-400 hover:text-red-300">Clear All</button>
+                            </div>
                         )}
                     </div>
 
-                    {!inputImage ? (
-                        <div className="grid grid-cols-2 gap-2">
-                            <label className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-700 rounded-lg hover:bg-gray-800/50 cursor-pointer transition-colors group">
-                                <Upload className="w-5 h-5 text-gray-500 group-hover:text-gray-300 mb-1" />
-                                <span className="text-xs text-gray-500">Upload</span>
-                                <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
-                            </label>
-                            <button
-                                onClick={() => setIsGalleryOpen(true)}
-                                className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-700 rounded-lg hover:bg-gray-800/50 cursor-pointer transition-colors group"
-                            >
-                                <Folder className="w-5 h-5 text-gray-500 group-hover:text-gray-300 mb-1" />
-                                <span className="text-xs text-gray-500">Gallery</span>
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="relative rounded-lg overflow-hidden border border-gray-700 group">
-                            <img src={inputImage} alt="Reference" className="w-full h-32 object-cover opacity-60" />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                    onClick={() => setIsDoodleMode(!isDoodleMode)}
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg transition-all ${isDoodleMode
-                                        ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)] scale-105'
-                                        : 'bg-gray-900/90 text-white border border-gray-600 hover:bg-gray-800'
-                                        }`}
-                                >
-                                    <PenTool size={12} />
-                                    {isDoodleMode ? 'Doodling Active' : 'Doodle / Edit'}
-                                </button>
+                    {/* Upload Buttons - Always visible */}
+                    <div className="grid grid-cols-2 gap-2">
+                        <label className="flex flex-col items-center justify-center p-3 border border-dashed border-gray-700 rounded-lg hover:bg-gray-800/50 cursor-pointer transition-colors group">
+                            <Upload className="w-4 h-4 text-gray-500 group-hover:text-gray-300 mb-1" />
+                            <span className="text-xs text-gray-500">Upload</span>
+                            <input type="file" className="hidden" accept="image/*" multiple onChange={handleFileUpload} />
+                        </label>
+                        <button
+                            onClick={() => setIsGalleryOpen(true)}
+                            className="flex flex-col items-center justify-center p-3 border border-dashed border-gray-700 rounded-lg hover:bg-gray-800/50 cursor-pointer transition-colors group"
+                        >
+                            <Folder className="w-4 h-4 text-gray-500 group-hover:text-gray-300 mb-1" />
+                            <span className="text-xs text-gray-500">Gallery</span>
+                        </button>
+                    </div>
+
+                    {/* Image Thumbnails Grid */}
+                    {inputImages.length > 0 && (
+                        <div className="space-y-2">
+                            <div className="grid grid-cols-3 gap-2">
+                                {inputImages.map((img, idx) => (
+                                    <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-700 aspect-square">
+                                        <img
+                                            src={img}
+                                            alt={`Reference ${idx + 1}`}
+                                            className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+                                            onClick={() => setLightboxImage(img)}
+                                        />
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleRemoveImage(idx); }}
+                                            className="absolute top-1 right-1 w-5 h-5 bg-red-500/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold"
+                                            title="Remove image"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
+
+                            <button
+                                onClick={() => setIsDrawingModalOpen(true)}
+                                className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold shadow-lg transition-all ${doodleData
+                                    ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.3)]'
+                                    : 'bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700'
+                                    }`}
+                            >
+                                <PenTool size={14} />
+                                {doodleData ? 'Edit Doodle' : 'Doodle / Mask (First Image)'}
+                            </button>
                         </div>
                     )}
                 </div>
@@ -273,7 +321,7 @@ const EditorView = () => {
                                     className="w-full bg-gray-800 border-2 border-transparent hover:border-purple-500/30 focus:border-purple-500 rounded-lg px-2 py-2 text-xs text-purple-100 focus:outline-none transition-all appearance-none cursor-pointer shadow-lg shadow-purple-900/5"
                                 >
                                     {ASPECT_RATIOS.map(ar => (
-                                        <option key={ar} value={ar}>{ar}</option>
+                                        <option key={ar} value={ar.toLowerCase()}>{ar}</option>
                                     ))}
                                 </select>
                                 <div className="absolute right-2 top-2.5 pointer-events-none text-purple-400">
@@ -303,14 +351,14 @@ const EditorView = () => {
                     </div>
                 </div>
 
-                {/* Prompt Input */}
-                <div className="space-y-2 flex-grow flex flex-col min-h-0">
+                {/* Prompt Input - Fixed height, not flex-grow */}
+                <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Prompt</label>
                     <textarea
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="Describe your creation..."
-                        className="w-full h-32 flex-grow bg-gray-900/50 border border-gray-700 rounded-lg p-3 text-sm focus:outline-none focus:border-yellow-500/50 resize-none transition-colors placeholder:text-gray-600"
+                        className="w-full h-24 bg-gray-900/50 border border-gray-700 rounded-lg p-3 text-sm focus:outline-none focus:border-yellow-500/50 resize-none transition-colors placeholder:text-gray-600"
                     />
                 </div>
 
@@ -337,8 +385,8 @@ const EditorView = () => {
                 {/* Generate Button */}
                 <button
                     onClick={handleGenerate}
-                    disabled={isGenerating || (!prompt && !inputImage)}
-                    className={`w - full py - 3.5 rounded - xl font - bold text - sm tracking - wide flex items - center justify - center gap - 2 transition - all shadow - lg ${isGenerating || (!prompt && !inputImage)
+                    disabled={isGenerating || (!prompt && inputImages.length === 0)}
+                    className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide flex items-center justify-center gap-2 transition-all shadow-lg ${isGenerating || (!prompt && inputImages.length === 0)
                         ? 'bg-gray-800 text-gray-600 cursor-not-allowed shadow-none'
                         : 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white hover:brightness-110 shadow-orange-900/20 active:scale-[0.98]'
                         } `}
@@ -370,22 +418,30 @@ const EditorView = () => {
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-800/20 via-[#13141f]/0 to-[#13141f] pointer-events-none" />
 
                     {generatedImage ? (
-                        <div className="relative z-10 shadow-2xl rounded-lg overflow-hidden border border-gray-700/50 bg-[#0f1016]">
-                            <img src={generatedImage} alt="Generated" className="max-w-full max-h-[85vh] object-contain" />
-                        </div>
-                    ) : isDoodleMode && inputImage ? (
-                        <div className="relative z-10 shadow-2xl rounded-lg overflow-hidden border border-purple-500/30 bg-[#0f1016]">
-                            {/* We need fixed dimensions for canvas, or responsive. For MVP, we'll let it size naturally but constraint it */}
-                            <div className="relative max-w-full max-h-[85vh]">
-                                <DrawingCanvas
-                                    width={800} // Fixed workspace for now or dynamic
-                                    height={600} // Dynamic implementation requires image aspect ratio check
-                                    backgroundImageSrc={inputImage}
-                                    onUpdate={setDoodleData}
-                                />
-                            </div>
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-white/50 bg-black/50 px-3 py-1 rounded-full pointer-events-none">
-                                Draw on the image to mask or guide
+                        <div className="relative z-10 shadow-2xl rounded-lg overflow-hidden border border-gray-700/50 bg-[#0f1016] group">
+                            <img
+                                src={generatedImage}
+                                alt="Generated"
+                                className="max-w-full max-h-[85vh] object-contain cursor-zoom-in"
+                                onClick={() => setLightboxImage(generatedImage)}
+                            />
+                            {/* Actions Overlay */}
+                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <button
+                                    onClick={handleClearGenerated}
+                                    className="p-2 bg-black/60 hover:bg-red-500/80 text-white rounded-full backdrop-blur-sm transition-colors"
+                                    title="Close / Clear Result"
+                                >
+                                    <Eraser size={16} />
+                                </button>
+                                <a
+                                    href={generatedImage}
+                                    download={`generated-${Date.now()}.png`}
+                                    className="p-2 bg-black/60 hover:bg-blue-500/80 text-white rounded-full backdrop-blur-sm transition-colors"
+                                    title="Download"
+                                >
+                                    <Download size={16} />
+                                </a>
                             </div>
                         </div>
                     ) : (
@@ -399,7 +455,70 @@ const EditorView = () => {
                 </div>
             </div>
 
-            {/* Modals */}
+            {/* Lightbox Modal */}
+            {lightboxImage && (
+                <div
+                    className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-md flex items-center justify-center p-8 animate-in fade-in duration-200"
+                    onClick={() => setLightboxImage(null)}
+                >
+                    <img
+                        src={lightboxImage}
+                        alt="Full Preview"
+                        className="max-w-full max-h-full object-contain drop-shadow-2xl"
+                    />
+                    <button className="absolute top-5 right-5 text-white/50 hover:text-white">
+                        <RefreshCcw className="rotate-45" size={32} /> {/* Using rotate-45 RefreshCcw as a close icon fallback or need X */}
+                    </button>
+                </div>
+            )}
+
+            {/* Doodle Drawing Modal */}
+            {isDrawingModalOpen && (
+                <div className="fixed inset-0 z-[50] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-[#1a1b26] border border-gray-700 w-full max-w-5xl h-[90vh] rounded-xl flex flex-col shadow-2xl overflow-hidden relative">
+                        <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-[#13141f]">
+                            <h3 className="font-semibold text-white flex items-center gap-2">
+                                <PenTool size={18} className="text-purple-400" />
+                                Doodle & Mask
+                            </h3>
+                            <button
+                                onClick={() => setIsDrawingModalOpen(false)}
+                                className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
+                            >
+                                <RefreshCcw className="rotate-45" size={20} />
+                            </button>
+                        </div>
+
+                        <div className="flex-grow bg-[#0f1016] relative flex items-center justify-center overflow-auto p-4">
+                            <DrawingCanvas
+                                width={800}
+                                height={600}
+                                backgroundImageSrc={inputImages[0] || null}
+                                onUpdate={(data) => {
+                                    setDoodleData(data);
+                                    setIsDoodleMode(true); // Auto-enable doodle mode usage
+                                }}
+                            />
+                        </div>
+                        <div className="p-4 border-t border-gray-800 bg-[#13141f] flex justify-end gap-2">
+                            <button
+                                onClick={() => { setDoodleData(null); setIsDoodleMode(false); }}
+                                className="px-4 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10"
+                            >
+                                Clear Doodle
+                            </button>
+                            <button
+                                onClick={() => setIsDrawingModalOpen(false)}
+                                className="px-4 py-2 rounded-lg text-sm bg-purple-600 text-white hover:bg-purple-700 font-medium shadow-lg"
+                            >
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Existing Models */}
             <GalleryPickerModal
                 isOpen={isGalleryOpen}
                 onClose={() => setIsGalleryOpen(false)}

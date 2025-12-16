@@ -11,7 +11,7 @@ import socket
 from workflow import WorkflowBuilder # Import the new builder
 
 # --- Configuration & Helper Functions ---
-COMFYUI_SERVER_ADDRESS = "192.168.50.106:8188" # Default, can be overridden
+COMFYUI_SERVER_ADDRESS = "127.0.0.1:8188" # Default, can be overridden
 
 def upload_image_to_comfyui(base64_string: str, prefix: str = "img_", server_address: str = COMFYUI_SERVER_ADDRESS) -> Optional[str]:
     """Decodes a base64 string and uploads it to ComfyUI via API."""
@@ -232,7 +232,7 @@ class ComfyUIAPIGenerator:
 # --- Main Entry Points ---
 
 def run_comfyui_dynamic(progress_callback=None, **kwargs) -> Optional[bytes]:
-    server_address = kwargs.get("server_address", "192.168.50.106:8188")
+    server_address = kwargs.get("server_address", "127.0.0.1:8188")
     job_client_id = str(uuid.uuid4())
     print(f"INFO: [run_comfyui_dynamic] Job {job_client_id} starting.")
 
@@ -292,7 +292,7 @@ def run_comfyui_dynamic(progress_callback=None, **kwargs) -> Optional[bytes]:
 
 
 def run_controlnet_preview_only(**kwargs) -> Optional[bytes]:
-    server_address = kwargs.get("server_address", "192.168.50.106:8188")
+    server_address = kwargs.get("server_address", "127.0.0.1:8188")
     job_client_id = str(uuid.uuid4())
     print(f"INFO: [run_controlnet_preview_only] Job {job_client_id} starting.")
 
