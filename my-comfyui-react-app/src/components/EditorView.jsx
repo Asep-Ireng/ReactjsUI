@@ -5,6 +5,7 @@ import { GENERATE_API_BASE } from '../api/comfyui';
 import GalleryPickerModal from './GalleryPickerModal';
 import DrawingCanvas from './DrawingCanvas';
 import SciFiButton from './SciFiButton';
+import Loader from './Loader';
 
 const EditorView = () => {
     const [prompt, setPrompt] = useState('');
@@ -453,7 +454,18 @@ const EditorView = () => {
                         </div>
                     )}
                 </div>
-            </div>
+
+
+            {/* Loader Overlay - Scoped to Right Panel */}
+            {isGenerating && (
+                <div className="absolute inset-0 z-[50] bg-black/80 backdrop-blur-md flex items-center justify-center animate-in fade-in duration-300">
+                    <Loader />
+                </div>
+            )}
+        </div>
+
+
+
 
             {/* Lightbox Modal */}
             {lightboxImage && (

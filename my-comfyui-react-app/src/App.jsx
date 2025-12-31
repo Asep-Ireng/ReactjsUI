@@ -11,6 +11,7 @@ import GalleryView from "./components/GalleryView.jsx";
 import EditorView from "./components/EditorView.jsx";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { GripVertical } from "lucide-react";
+import SplashLoader from "./components/SplashLoader.jsx";
 import "./App.css";
 
 // Generation view with the resizable panels
@@ -60,7 +61,11 @@ const AppContent = () => {
   }
 
   if (!characterDropdownOptions || characterDropdownOptions.length === 0) {
-    return <div className="app-container loading-message">Loading data...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#0f1016]">
+        <SplashLoader />
+      </div>
+    );
   }
 
   const renderActiveView = () => {

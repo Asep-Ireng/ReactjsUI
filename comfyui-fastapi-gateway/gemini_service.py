@@ -1,6 +1,9 @@
 import os
 import io
 import base64
+import datetime
+import uuid
+import pathlib
 from PIL import Image
 from google import genai
 from google.genai import types
@@ -69,6 +72,50 @@ def _process_images(image_inputs: list) -> list:
     
     return images
 
+def save_image_to_disk(image_data, model_name="gemini"):
+    """
+    Saves image (Base64 string or PIL Image) to output_api/{date}/{model}_{time}_{uid}.png
+    Returns: Absolute path of saved file
+    """
+    try:
+        # 1. Prepare Directory
+        today = datetime.datetime.now().strftime("%Y-%m-%d")
+        output_dir = pathlib.Path("output_api") / today
+        output_dir.mkdir(parents=True, exist_ok=True)  # Create if doesn't exist
+
+        # 2. Prepare Filename
+        timestamp = datetime.datetime.now().strftime("%H-%M-%S")
+        short_id = str(uuid.uuid4())[:8]
+        clean_model = model_name.replace(":", "").replace("/", "-").split("-")[-1] # Simplify model name
+        filename = f"{clean_model}_{timestamp}_{short_id}.png"
+        filepath = output_dir / filename
+
+        # 3. Save Image
+        if isinstance(image_data, Image.Image):
+            image_data.save(filepath, format="PNG")
+        elif isinstance(image_data, str):
+            # Assumes Base64 string (with or without prefix)
+            if "," in image_data:
+                image_data = image_data.split(",")[1]
+            # Fix padding if needed (reuse logic or assume logic elsewhere, but good to be safe)
+            image_data = "".join(image_data.split())
+            image_data = image_data.rstrip("=")
+            padding_needed = (4 - len(image_data) % 4) % 4
+            if padding_needed:
+                image_data += "=" * padding_needed
+                
+            img_bytes = base64.b64decode(image_data)
+            with open(filepath, "wb") as f:
+                f.write(img_bytes)
+        
+        print(f"DEBUG: Saved image to: {filepath.absolute()}")
+        return str(filepath.absolute())
+    except Exception as e:
+        print(f"ERROR: Failed to save image to disk: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
 async def generate_image_gemini(
     prompt: str,
     model_alias: str = "flash",
@@ -83,6 +130,11 @@ async def generate_image_gemini(
     - Single/no image: Uses chat mode for conversational continuity with thought signatures
     """
     global chat_session, current_chat_model
+    
+    print(f"DEBUG: generate_image_gemini called with prompt length: {len(prompt)}")
+    print(f"DEBUG: model_alias: {model_alias}")
+    print(f"DEBUG: image_inputs count: {len(image_inputs) if image_inputs else 0}")
+    print(f"DEBUG: parameters: {parameters}")
 
     if not API_KEY:
         raise HTTPException(status_code=500, detail="GOOGLE_API_KEY not configured. Please add it to your .env file.")
@@ -117,12 +169,33 @@ async def generate_image_gemini(
         # Process images
         images = _process_images(image_inputs)
         
+        # Define Safety Settings (BLOCK_NONE for private use/unrestricted generation)
+        safety_settings = [
+            types.SafetySetting(
+                category="HARM_CATEGORY_DANGEROUS_CONTENT",
+                threshold="BLOCK_NONE"
+            ),
+            types.SafetySetting(
+                category="HARM_CATEGORY_HATE_SPEECH",
+                threshold="BLOCK_NONE"
+            ),
+            types.SafetySetting(
+                category="HARM_CATEGORY_HARASSMENT",
+                threshold="BLOCK_NONE"
+            ),
+            types.SafetySetting(
+                category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                threshold="BLOCK_NONE"
+            ),
+        ]
+
         # Build config - skip ImageConfig if auto aspect ratio
         if use_auto_aspect:
             # Let API auto-detect aspect ratio from input images
             print("DEBUG: Using auto aspect ratio - no ImageConfig")
             config = types.GenerateContentConfig(
-                response_modalities=['TEXT', 'IMAGE']
+                response_modalities=['TEXT', 'IMAGE'],
+                safety_settings=safety_settings
             )
         else:
             # Use explicit aspect ratio and size
@@ -132,13 +205,15 @@ async def generate_image_gemini(
                     image_config=types.ImageConfig(
                         aspect_ratio=aspect_ratio,
                         image_size=image_size
-                    )
+                    ),
+                    safety_settings=safety_settings
                 )
                 print(f"DEBUG: ImageConfig: aspect_ratio={aspect_ratio}, image_size={image_size}")
             except Exception as config_err:
                 print(f"WARN: ImageConfig not supported: {config_err}")
                 config = types.GenerateContentConfig(
-                    response_modalities=['TEXT', 'IMAGE']
+                    response_modalities=['TEXT', 'IMAGE'],
+                    safety_settings=safety_settings
                 )
 
         # Determine API call mode:
@@ -180,20 +255,23 @@ async def generate_image_gemini(
         
         # Debug: Log full response structure
         print(f"DEBUG: Response type: {type(response).__name__}")
-        response_attrs = [attr for attr in dir(response) if not attr.startswith('_')]
-        print(f"DEBUG: Response attrs: {response_attrs[:15]}...")  # First 15
+        try:
+            response_attrs = [attr for attr in dir(response) if not attr.startswith('_')]
+            print(f"DEBUG: Response attrs: {response_attrs[:15]}...")  # First 15
+        except:
+            pass
         
-        # Check for candidates structure (official format)
+        # Debug: Check finish reason and safety
         if hasattr(response, 'candidates') and response.candidates:
-            print(f"DEBUG: Found {len(response.candidates)} candidates")
-            candidate = response.candidates[0]
-            if hasattr(candidate, 'content') and candidate.content:
-                content = candidate.content
-                print(f"DEBUG: Candidate content type: {type(content).__name__}")
-                if hasattr(content, 'parts') and content.parts:
-                    parts = list(content.parts)
-                    print(f"DEBUG: Found {len(parts)} parts in candidate.content.parts")
-        
+            first_candidate = response.candidates[0]
+            finish_reason = getattr(first_candidate, 'finish_reason', 'UNKNOWN')
+            print(f"DEBUG: Finish Reason: {finish_reason}")
+            
+            # Optional: Print safety ratings if available
+            if getattr(first_candidate, 'safety_ratings', None):
+                # Simple print to avoid clutter, or iterate if needed
+                print(f"DEBUG: Safety Ratings present: {len(first_candidate.safety_ratings)} ratings")
+
         # Get parts from response (handle different SDK response formats)
         parts = []
         if hasattr(response, 'parts') and response.parts:
@@ -208,11 +286,14 @@ async def generate_image_gemini(
         
         # Debug: log all part attributes
         for i, part in enumerate(parts):
-            part_attrs = [attr for attr in dir(part) if not attr.startswith('_')]
-            is_thought = getattr(part, 'thought', False) if hasattr(part, 'thought') else False
-            has_text = bool(getattr(part, 'text', None)) if hasattr(part, 'text') else False
-            has_inline = bool(getattr(part, 'inline_data', None)) if hasattr(part, 'inline_data') else False
-            print(f"DEBUG: Part {i}: thought={is_thought}, has_text={has_text}, has_inline_data={has_inline}")
+            try:
+                part_attrs = [attr for attr in dir(part) if not attr.startswith('_')]
+                is_thought = getattr(part, 'thought', False) if hasattr(part, 'thought') else False
+                has_text = bool(getattr(part, 'text', None)) if hasattr(part, 'text') else False
+                has_inline = bool(getattr(part, 'inline_data', None)) if hasattr(part, 'inline_data') else False
+                print(f"DEBUG: Part {i}: thought={is_thought}, has_text={has_text}, has_inline_data={has_inline}")
+            except:
+                pass
         
         if not parts:
             # Fallback: check for direct text
@@ -237,16 +318,28 @@ async def generate_image_gemini(
                     if hasattr(part.inline_data, 'data') and part.inline_data.data:
                         img_b64 = base64.b64encode(part.inline_data.data).decode('utf-8')
                         print(f"DEBUG: Extracted image via inline_data (thought={is_thought})")
+                elif hasattr(part, 'as_image'):
+                    # Official SDK helper
+                    img = part.as_image()
+                    if img:
+                        buffered = io.BytesIO()
+                        img.save(buffered, format="PNG")
+                        img_b64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+                        print(f"DEBUG: Extracted image via as_image (thought={is_thought})")
             except Exception as e:
                 print(f"DEBUG: inline_data extraction failed: {e}")
             
             if img_b64:
+                # SAVE INTERIM IMAGE
                 if is_thought:
-                    # Interim thought image
+                    print("DEBUG: Saving interim thought image...")
+                    save_image_to_disk(img_b64, model_name=f"{target_model_name}_interim")
                     thinking_parts.append({"type": "image", "content": f"data:image/png;base64,{img_b64}"})
                 else:
                     # Final image
                     generated_image_b64 = img_b64
+                    print("DEBUG: Saving final generated image...")
+                    save_image_to_disk(img_b64, model_name=target_model_name)
         
         # Convert thinking_parts to string for backwards compat
         thinking_text = ""
@@ -255,11 +348,33 @@ async def generate_image_gemini(
                 thinking_text += tp["content"] + "\n"
             elif tp["type"] == "image":
                 thinking_text += "[Interim Image]\n"  # Placeholder for now
+        
+        # Fallback: If no text but we have a finish reason (e.g. SAFETY/PROHIBITED), show it
+        if not thinking_text.strip():
+            candidate_reason = None
+            if hasattr(response, 'candidates') and response.candidates:
+                candidate_reason = getattr(response.candidates[0], 'finish_reason', None)
+            
+            # Check if reason is anything other than STOP (1) or None
+            # STOP=1 usually means success or natural finish
+            if candidate_reason and str(candidate_reason) != "1" and str(candidate_reason) != "FinishReason.STOP":
+                 thinking_text = f"Generation Interrupted.\nReason: {candidate_reason}\n\nTry adjusting your prompt."
 
-        return {
+        result_payload = {
             "image": f"data:image/png;base64,{generated_image_b64}" if generated_image_b64 else None,
             "thinking_process": thinking_text.strip() if thinking_text else None
         }
+        
+        # DEBUG: Print Return Payload
+        print("-" * 30)
+        print("DEBUG: Payload Returning from Service")
+        print(f"Image Present: {bool(result_payload['image'])}")
+        if result_payload['image']:
+             print(f"Image Data Length: {len(result_payload['image'])}")
+        print(f"Thinking Process Length: {len(result_payload['thinking_process'] or '')}")
+        print("-" * 30)
+        
+        return result_payload
 
     except Exception as e:
         print(f"Gemini API Error ({target_model_name}): {e}")
@@ -270,4 +385,3 @@ async def generate_image_gemini(
         if "404" in str(e):
             raise HTTPException(status_code=404, detail=f"Model '{target_model_name}' not found. Check preview access/SDK.")
         raise HTTPException(status_code=500, detail=str(e))
-

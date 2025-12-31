@@ -155,6 +155,26 @@ class ExternalGenerateRequest(BaseModel):
 @app.post("/api/external/generate")
 async def generate_external(req: ExternalGenerateRequest):
     print(f"INFO: /api/external/generate called for model {req.model}")
+    
+    # DEBUG: Print Payload
+    print("-" * 30)
+    print("DEBUG: Payload Received")
+    print(f"Prompt: {req.prompt[:50]}..." if len(req.prompt) > 50 else f"Prompt: {req.prompt}")
+    print(f"Model: {req.model}")
+    
+    img_count = 0
+    if req.images:
+        img_count = len(req.images)
+    elif req.image:
+        img_count = 1
+    print(f"Image Count: {img_count}")
+    
+    if req.parameters:
+        print(f"Parameters: {req.parameters}")
+    else:
+        print("Parameters: None")
+    print("-" * 30)
+
     # Import here to avoid circular or early init issues if desired, or move up
     from gemini_service import generate_image_gemini, reset_gemini_chat
     
@@ -180,20 +200,8 @@ async def generate_external(req: ExternalGenerateRequest):
         image_data = result.get("image")
         
         if not result.get("thinking_process"):
-             model_display = "Nano Banana (Flash)" if req.model == 'flash' else "Banana Pro (Gemini 3)"
-             # Simulate a "live" thinking process text for the frontend
-             mock_thoughts = (
-                f"Model: {model_display}\n"
-                "STEP 1: Protocol Handshake...\n"
-                "Authenticated with Google Cloud Vertex/Gemini API.\n"
-                "STEP 2: Latent Diffusion\n"
-                f"Processing parameters: {req.parameters}\n"
-                "Generating pixel data...\n"
-                "STEP 3: Safety Filter Pass\n"
-                "Content approved.\n"
-                "STEP 4: Finalizing\n"
-                "Image encoded and ready."
-             )
+             # If no reasoning provided, just return empty or a placeholder that isn't misleading
+             mock_thoughts = "No reasoning process provided by the model."
         else:
              mock_thoughts = result.get("thinking_process")
 
