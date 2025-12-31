@@ -25,3 +25,7 @@ settings/comfyui_frontend_settings.json
 # System
 Thumbs.db
 order.json
+
+# Generated Content
+comfyui-fastapi-gateway/output_api/
+
