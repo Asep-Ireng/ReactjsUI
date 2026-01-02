@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Wand2, Upload, Eraser, Move, Download, RefreshCw, PanelRightOpen, PanelRightClose, Palette, Box, Folder, PenTool, Sparkles, Image as ImageIcon, Loader2, BrainCircuit, RefreshCcw } from 'lucide-react';
 import { GENERATE_API_BASE } from '../api/comfyui';
 import GalleryPickerModal from './GalleryPickerModal';
@@ -20,16 +20,77 @@ const EditorView = () => {
 
     // Input Image State - Now supports MULTIPLE images
     const [inputImages, setInputImages] = useState([]); // Array of base64 or URL
+    const [imageDimensions, setImageDimensions] = useState([]); // Array of {w, h} for each image
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
     const [isDoodleMode, setIsDoodleMode] = useState(false);
 
     // Canvas State
     const [doodleData, setDoodleData] = useState(null);
+    
+    // Extract dimensions when images change
+    useEffect(() => {
+        const extractDimensions = async () => {
+            const dims = await Promise.all(
+                inputImages.map(imgSrc => {
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+                        img.onerror = () => resolve(null);
+                        img.src = imgSrc;
+                    });
+                })
+            );
+            setImageDimensions(dims);
+        };
+        if (inputImages.length > 0) {
+            extractDimensions();
+        } else {
+            setImageDimensions([]);
+        }
+    }, [inputImages]);
+    
+    // Seedream validation helper
+    const getSeedreamValidation = (w, h) => {
+        if (!w || !h) return { status: 'unknown', text: '?' };
+        const MIN_PIXELS = 3686400;
+        const MAX_PIXELS = 16777216;
+        const pixels = w * h;
+        const ratio = w / h;
+        
+        if (ratio < 1/16 || ratio > 16) {
+            return { status: 'invalid', text: 'Bad ratio' };
+        }
+        if (pixels >= MIN_PIXELS && pixels <= MAX_PIXELS) {
+            return { status: 'valid', text: '✓ Fits' };
+        }
+        if (pixels < MIN_PIXELS) {
+            return { status: 'scale_up', text: '↑ Scale up' };
+        }
+        if (pixels > MAX_PIXELS) {
+            return { status: 'scale_down', text: '↓ Scale down' };
+        }
+        return { status: 'unknown', text: '?' };
+    };
 
     // Advanced Settings
     const [aspectRatio, setAspectRatio] = useState('1:1');
     const [resolution, setResolution] = useState('1024x1024'); // Default 1K
     const [temperature, setTemperature] = useState(1.0);
+    
+    // Seedream-specific resolution (uses Method 2 with valid pixel ranges)
+    const [seedreamResolution, setSeedreamResolution] = useState('2K');
+    
+    const SEEDREAM_RESOLUTIONS = [
+        { label: "2K (Auto)", value: "2K" },
+        { label: "4K (High)", value: "4K" },
+        { label: "From Image 1", value: "from_image_1" },
+        { label: "From Image 2", value: "from_image_2" },
+        { label: "1:1 (2048x2048)", value: "2048x2048" },
+        { label: "16:9 (2560x1440)", value: "2560x1440" },
+        { label: "9:16 (1440x2560)", value: "1440x2560" },
+        { label: "4:3 (2304x1728)", value: "2304x1728" },
+        { label: "3:4 (1728x2304)", value: "1728x2304" },
+    ];
 
     // ASPECT_RATIOS moved below to include Auto option
 
@@ -68,7 +129,7 @@ const EditorView = () => {
                 images: imagesToSend.length > 0 ? imagesToSend : undefined,
                 parameters: {
                     aspectRatio,
-                    resolution,
+                    resolution: selectedModel === 'seedream' ? seedreamResolution : resolution,
                     temperature
                 }
             };
@@ -202,7 +263,7 @@ const EditorView = () => {
                             Reset Chat
                         </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                         <button
                             onClick={() => setSelectedModel('flash')}
                             className={`p-3 rounded-lg border text-left transition-all relative overflow-hidden group ${selectedModel === 'flash'
@@ -221,9 +282,68 @@ const EditorView = () => {
                                 }`}
                         >
                             <div className={`font-medium text-sm ${selectedModel === 'pro' ? 'text-purple-400' : 'text-gray-300'}`}>Banana Pro</div>
-                            <div className="text-[10px] text-gray-500">Quality (Gemini 3)</div>
+                            <div className="text-[10px] text-gray-500">Gemini 3 Pro</div>
+                        </button>
+                        <button
+                            onClick={() => setSelectedModel('seedream')}
+                            className={`p-3 rounded-lg border text-left transition-all relative overflow-hidden group ${selectedModel === 'seedream'
+                                ? 'bg-cyan-500/10 border-cyan-500/50'
+                                : 'bg-gray-900/40 border-gray-700 hover:border-gray-600'
+                                }`}
+                        >
+                            <div className={`font-medium text-sm ${selectedModel === 'seedream' ? 'text-cyan-400' : 'text-gray-300'}`}>Seedream</div>
+                            <div className="text-[10px] text-gray-500">4.5 (Cheap)</div>
                         </button>
                     </div>
+                    
+                    {/* Seedream Resolution Selector - Only visible when Seedream selected */}
+                    {selectedModel === 'seedream' && (
+                        <div className="mt-3 space-y-1">
+                            <label className="text-xs font-bold text-cyan-400/80 uppercase tracking-widest">Seedream Resolution</label>
+                            <div className="relative">
+                                <select
+                                    value={seedreamResolution}
+                                    onChange={(e) => setSeedreamResolution(e.target.value)}
+                                    className="w-full bg-gray-800 border-2 border-cyan-500/30 hover:border-cyan-500/50 focus:border-cyan-500 rounded-lg px-3 py-2 text-xs text-cyan-100 focus:outline-none transition-all appearance-none cursor-pointer shadow-lg"
+                                >
+                                    {SEEDREAM_RESOLUTIONS.map(res => (
+                                        <option key={res.value} value={res.value}>{res.label}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-3 top-2.5 pointer-events-none text-cyan-400">
+                                    <Box size={12} />
+                                </div>
+                            </div>
+                            {/* Validation Display */}
+                            {(() => {
+                                const MIN_PIXELS = 3686400;
+                                const MAX_PIXELS = 16777216;
+                                
+                                if (['2K', '4K'].includes(seedreamResolution)) {
+                                    return <p className="text-[10px] text-green-400">✓ Valid preset</p>;
+                                }
+                                if (['from_image_1', 'from_image_2'].includes(seedreamResolution)) {
+                                    return <p className="text-[10px] text-cyan-400">📐 Will auto-scale to valid range (3.7M - 16.8M px)</p>;
+                                }
+                                if (seedreamResolution.includes('x')) {
+                                    const parts = seedreamResolution.split('x');
+                                    const w = parseInt(parts[0]);
+                                    const h = parseInt(parts[1]);
+                                    if (!isNaN(w) && !isNaN(h)) {
+                                        const pixels = w * h;
+                                        const ratio = w / h;
+                                        const isValid = pixels >= MIN_PIXELS && pixels <= MAX_PIXELS && ratio >= 1/16 && ratio <= 16;
+                                        if (isValid) {
+                                            return <p className="text-[10px] text-green-400">✓ {(pixels/1000000).toFixed(1)}M pixels</p>;
+                                        } else {
+                                            return <p className="text-[10px] text-red-400">✗ {(pixels/1000000).toFixed(1)}M pixels (need 3.7M-16.8M)</p>;
+                                        }
+                                    }
+                                }
+                                return <p className="text-[10px] text-gray-500">Select resolution</p>;
+                            })()}
+                        </div>
+                    )}
                 </div>
 
                 {/* Input Image Controls - Multi-Image Support */}
@@ -267,6 +387,10 @@ const EditorView = () => {
                                             className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
                                             onClick={() => setLightboxImage(img)}
                                         />
+                                        {/* Image Number Badge */}
+                                        <div className="absolute bottom-1 left-1 w-5 h-5 bg-cyan-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg">
+                                            {idx + 1}
+                                        </div>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); handleRemoveImage(idx); }}
                                             className="absolute top-1 right-1 w-5 h-5 bg-red-500/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold"
@@ -274,6 +398,23 @@ const EditorView = () => {
                                         >
                                             ×
                                         </button>
+                                        {/* Resolution Info */}
+                                        {imageDimensions[idx] && (
+                                            <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-[8px] text-center py-0.5">
+                                                <span className="text-gray-300">{imageDimensions[idx].w}×{imageDimensions[idx].h}</span>
+                                                {selectedModel === 'seedream' && (() => {
+                                                    const v = getSeedreamValidation(imageDimensions[idx].w, imageDimensions[idx].h);
+                                                    const colors = {
+                                                        valid: 'text-green-400',
+                                                        scale_up: 'text-yellow-400',
+                                                        scale_down: 'text-yellow-400',
+                                                        invalid: 'text-red-400',
+                                                        unknown: 'text-gray-400'
+                                                    };
+                                                    return <span className={`ml-1 ${colors[v.status]}`}>{v.text}</span>;
+                                                })()}
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -311,6 +452,8 @@ const EditorView = () => {
                         />
                     </div>
 
+                    {/* Aspect Ratio & Resolution - Only for Gemini models */}
+                    {selectedModel !== 'seedream' && (
                     <div className="grid grid-cols-2 gap-3">
                         {/* Aspect Ratio */}
                         <div className="space-y-1">
@@ -350,6 +493,7 @@ const EditorView = () => {
                             </div>
                         </div>
                     </div>
+                    )}
                 </div>
 
                 {/* Prompt Input - Fixed height, not flex-grow */}

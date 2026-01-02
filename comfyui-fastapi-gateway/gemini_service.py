@@ -169,33 +169,15 @@ async def generate_image_gemini(
         # Process images
         images = _process_images(image_inputs)
         
-        # Define Safety Settings (BLOCK_NONE for private use/unrestricted generation)
-        safety_settings = [
-            types.SafetySetting(
-                category="HARM_CATEGORY_DANGEROUS_CONTENT",
-                threshold="BLOCK_NONE"
-            ),
-            types.SafetySetting(
-                category="HARM_CATEGORY_HATE_SPEECH",
-                threshold="BLOCK_NONE"
-            ),
-            types.SafetySetting(
-                category="HARM_CATEGORY_HARASSMENT",
-                threshold="BLOCK_NONE"
-            ),
-            types.SafetySetting(
-                category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                threshold="BLOCK_NONE"
-            ),
-        ]
+        # Note: Explicitly removed safety_settings - passing BLOCK_NONE was causing MORE censorship.
+        # Letting the API use its defaults is often more permissive for authorized accounts.
 
         # Build config - skip ImageConfig if auto aspect ratio
         if use_auto_aspect:
             # Let API auto-detect aspect ratio from input images
             print("DEBUG: Using auto aspect ratio - no ImageConfig")
             config = types.GenerateContentConfig(
-                response_modalities=['TEXT', 'IMAGE'],
-                safety_settings=safety_settings
+                response_modalities=['TEXT', 'IMAGE']
             )
         else:
             # Use explicit aspect ratio and size
@@ -205,15 +187,13 @@ async def generate_image_gemini(
                     image_config=types.ImageConfig(
                         aspect_ratio=aspect_ratio,
                         image_size=image_size
-                    ),
-                    safety_settings=safety_settings
+                    )
                 )
                 print(f"DEBUG: ImageConfig: aspect_ratio={aspect_ratio}, image_size={image_size}")
             except Exception as config_err:
                 print(f"WARN: ImageConfig not supported: {config_err}")
                 config = types.GenerateContentConfig(
-                    response_modalities=['TEXT', 'IMAGE'],
-                    safety_settings=safety_settings
+                    response_modalities=['TEXT', 'IMAGE']
                 )
 
         # Determine API call mode:

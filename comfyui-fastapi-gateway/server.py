@@ -186,21 +186,32 @@ async def generate_external(req: ExternalGenerateRequest):
         if req.image and req.image not in image_inputs:  # Backward compat
             image_inputs.append(req.image)
         
-        # Call the actual service
-        # We pass parameters (aspect ratio, etc)
-        result = await generate_image_gemini(
-            prompt=req.prompt,
-            model_alias=req.model,
-            image_inputs=image_inputs if image_inputs else None,
-            parameters=req.parameters
-        )
+        # Route to appropriate service based on model
+        if req.model in ["seedream", "sd45", "seedream45"]:
+            # Seedream 4.5
+            from seedream_service import generate_image_seedream
+            print("INFO: Routing to Seedream 4.5 service")
+            result = await generate_image_seedream(
+                prompt=req.prompt,
+                image_inputs=image_inputs if image_inputs else None,
+                parameters=req.parameters
+            )
+        else:
+            # Gemini (flash, pro) - default
+            from gemini_service import generate_image_gemini
+            print("INFO: Routing to Gemini service")
+            result = await generate_image_gemini(
+                prompt=req.prompt,
+                model_alias=req.model,
+                image_inputs=image_inputs if image_inputs else None,
+                parameters=req.parameters
+            )
         
         # If the service returns an image, use it.
-        # If it returns no thinking process (likely for Imagen), we simulate it for UX consistency
         image_data = result.get("image")
         
         if not result.get("thinking_process"):
-             # If no reasoning provided, just return empty or a placeholder that isn't misleading
+             # If no reasoning provided, just return empty or a placeholder
              mock_thoughts = "No reasoning process provided by the model."
         else:
              mock_thoughts = result.get("thinking_process")
