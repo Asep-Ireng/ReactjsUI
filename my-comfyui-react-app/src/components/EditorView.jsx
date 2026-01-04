@@ -1,18 +1,24 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Wand2, Upload, Eraser, Move, Download, RefreshCw, PanelRightOpen, PanelRightClose, Palette, Box, Folder, PenTool, Sparkles, Image as ImageIcon, Loader2, BrainCircuit, RefreshCcw } from 'lucide-react';
+import { Wand2, Upload, Eraser, Move, Download, RefreshCw, PanelRightOpen, PanelRightClose, Palette, Box, Folder, PenTool, Sparkles, Image as ImageIcon, Loader2, BrainCircuit, RefreshCcw, Plus, X } from 'lucide-react';
 import { GENERATE_API_BASE } from '../api/comfyui';
 import GalleryPickerModal from './GalleryPickerModal';
 import DrawingCanvas from './DrawingCanvas';
 import SciFiButton from './SciFiButton';
 import Loader from './Loader';
+import AddModelModal from './AddModelModal';
+import { loadModels, saveModels, addModel, removeModel, getProviderColors } from '../config/modelConfig';
 
 const EditorView = () => {
     const [prompt, setPrompt] = useState('');
-    const [selectedModel, setSelectedModel] = useState('flash'); // 'flash' or 'pro'
+    const [selectedModel, setSelectedModel] = useState('flash'); // Model ID
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedImage, setGeneratedImage] = useState(null);
     const [error, setError] = useState(null);
+
+    // Dynamic Model Config
+    const [modelConfig, setModelConfig] = useState(() => loadModels());
+    const [isAddModelOpen, setIsAddModelOpen] = useState(false);
 
     // Reasoning/Thinking Log
     const [thinkingLog, setThinkingLog] = useState('');
@@ -49,11 +55,24 @@ const EditorView = () => {
         }
     }, [inputImages]);
     
-    // Seedream validation helper
-    const getSeedreamValidation = (w, h) => {
+    // Seedream validation helper - uses model's resolution constraints
+    const getSeedreamValidation = (w, h, model) => {
         if (!w || !h) return { status: 'unknown', text: '?' };
-        const MIN_PIXELS = 3686400;
-        const MAX_PIXELS = 16777216;
+        
+        // Parse min/max from model config, with fallbacks
+        const parseRes = (res) => {
+            if (!res) return null;
+            const parts = res.toLowerCase().split('x');
+            if (parts.length === 2) {
+                return parseInt(parts[0]) * parseInt(parts[1]);
+            }
+            return null;
+        };
+        
+        // Default constraints for Seedream 4.5
+        const MIN_PIXELS = parseRes(model?.minResolution) || 3686400;  // ~1920x1920
+        const MAX_PIXELS = parseRes(model?.maxResolution) || 16777216; // 4096x4096
+        
         const pixels = w * h;
         const ratio = w / h;
         
@@ -77,20 +96,55 @@ const EditorView = () => {
     const [resolution, setResolution] = useState('1024x1024'); // Default 1K
     const [temperature, setTemperature] = useState(1.0);
     
+    // Compare Mode - Generate with 2 models simultaneously
+    const [isCompareMode, setIsCompareMode] = useState(false);
+    const [selectedModelB, setSelectedModelB] = useState(null);
+    const [generatedImageB, setGeneratedImageB] = useState(null);
+    const [isGeneratingB, setIsGeneratingB] = useState(false);
+    const [compareView, setCompareView] = useState('side'); // 'side' | 'a' | 'b'
+    const [seedreamResolutionB, setSeedreamResolutionB] = useState('2K'); // Resolution for Model B
+    
     // Seedream-specific resolution (uses Method 2 with valid pixel ranges)
     const [seedreamResolution, setSeedreamResolution] = useState('2K');
     
-    const SEEDREAM_RESOLUTIONS = [
-        { label: "2K (Auto)", value: "2K" },
-        { label: "4K (High)", value: "4K" },
-        { label: "From Image 1", value: "from_image_1" },
-        { label: "From Image 2", value: "from_image_2" },
-        { label: "1:1 (2048x2048)", value: "2048x2048" },
-        { label: "16:9 (2560x1440)", value: "2560x1440" },
-        { label: "9:16 (1440x2560)", value: "1440x2560" },
-        { label: "4:3 (2304x1728)", value: "2304x1728" },
-        { label: "3:4 (1728x2304)", value: "1728x2304" },
-    ];
+    // Dynamic Seedream resolutions based on selected model's constraints
+    const seedreamResolutions = useMemo(() => {
+        const currentModel = modelConfig.models.find(m => m.id === selectedModel);
+        const minRes = currentModel?.minResolution || '2048x2048';
+        const maxRes = currentModel?.maxResolution || '4096x4096';
+        
+        // Parse to get min/max pixels
+        const parsePixels = (res) => {
+            const parts = res.toLowerCase().split('x');
+            return parts.length === 2 ? parseInt(parts[0]) * parseInt(parts[1]) : 0;
+        };
+        
+        const minPixels = parsePixels(minRes);
+        const maxPixels = parsePixels(maxRes);
+        
+        // Define all possible resolutions
+        const allResolutions = [
+            { label: "2K (Auto)", value: "2K", pixels: 2073600 },  // ~1920x1080
+            { label: "4K (High)", value: "4K", pixels: 8294400 },  // ~3840x2160
+            { label: "From Image 1", value: "from_image_1", pixels: 0 },  // Dynamic
+            { label: "From Image 2", value: "from_image_2", pixels: 0 },  // Dynamic
+            { label: "720p (1280x720)", value: "1280x720", pixels: 921600 },
+            { label: "1080p (1920x1080)", value: "1920x1080", pixels: 2073600 },
+            { label: "1:1 (2048x2048)", value: "2048x2048", pixels: 4194304 },
+            { label: "16:9 (2560x1440)", value: "2560x1440", pixels: 3686400 },
+            { label: "9:16 (1440x2560)", value: "1440x2560", pixels: 3686400 },
+            { label: "4:3 (2304x1728)", value: "2304x1728", pixels: 3981312 },
+            { label: "3:4 (1728x2304)", value: "1728x2304", pixels: 3981312 },
+        ];
+        
+        // Filter resolutions that fit within the model's constraints
+        return allResolutions.filter(res => {
+            // Always include dynamic options
+            if (res.pixels === 0) return true;
+            // Include if within valid range
+            return res.pixels >= minPixels && res.pixels <= maxPixels;
+        });
+    }, [selectedModel, modelConfig.models]);
 
     // ASPECT_RATIOS moved below to include Auto option
 
@@ -111,60 +165,106 @@ const EditorView = () => {
         if (!prompt && inputImages.length === 0 && !doodleData) return;
 
         setIsGenerating(true);
+        if (isCompareMode && selectedModelB) setIsGeneratingB(true);
         setError(null);
-        setThinkingLog(''); // Clear previous log
+        setThinkingLog('');
 
         try {
-            // Prepare payload
-            // If doodle data exists, include it as first image
-            // Then add all reference images
+            // Prepare images
             let imagesToSend = [...inputImages];
             if (isDoodleMode && doodleData) {
                 imagesToSend = [doodleData, ...inputImages];
             }
 
-            const payload = {
-                prompt,
-                model: selectedModel,
-                images: imagesToSend.length > 0 ? imagesToSend : undefined,
-                parameters: {
-                    aspectRatio,
-                    resolution: selectedModel === 'seedream' ? seedreamResolution : resolution,
-                    temperature
+            // Helper to build payload for a model
+            const buildPayload = (modelId, seedreamRes) => {
+                const modelCfg = modelConfig.models.find(m => m.id === modelId);
+                const modelToSend = modelCfg?.modelName || modelId;
+                const isSeedream = modelCfg?.provider === 'seedream';
+                
+                let finalRes = seedreamRes;
+                if (isSeedream && seedreamRes.startsWith('custom:')) {
+                    const customVal = seedreamRes.replace('custom:', '');
+                    const minPixels = (() => {
+                        const res = modelCfg?.minResolution || '2048x2048';
+                        const parts = res.toLowerCase().split('x');
+                        return parts.length === 2 ? parseInt(parts[0]) * parseInt(parts[1]) : 4194304;
+                    })();
+                    
+                    if (customVal.includes(':')) {
+                        const parts = customVal.split(':').map(p => parseFloat(p.trim()));
+                        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1]) && parts[1] > 0) {
+                            const ratio = parts[0] / parts[1];
+                            const h = Math.ceil(Math.sqrt(minPixels / ratio));
+                            const w = Math.ceil(h * ratio);
+                            finalRes = `${w}x${h}`;
+                        }
+                    } else if (customVal.toLowerCase().includes('x')) {
+                        finalRes = customVal;
+                    }
                 }
+
+                return {
+                    prompt,
+                    model: modelToSend,
+                    images: imagesToSend.length > 0 ? imagesToSend : undefined,
+                    parameters: {
+                        aspectRatio,
+                        resolution: isSeedream ? finalRes : resolution,
+                        temperature,
+                        ...(isSeedream && modelCfg?.minResolution && { minResolution: modelCfg.minResolution }),
+                        ...(isSeedream && modelCfg?.maxResolution && { maxResolution: modelCfg.maxResolution }),
+                    }
+                };
             };
 
-            const response = await fetch(`${GENERATE_API_BASE}/external/generate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            // Build API call function
+            const callAPI = async (payload) => {
+                const response = await fetch(`${GENERATE_API_BASE}/external/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                return response.json();
+            };
 
-            const data = await response.json();
+            // Execute calls
+            const payloadA = buildPayload(selectedModel, seedreamResolution);
+            
+            if (isCompareMode && selectedModelB) {
+                // Parallel calls for both models
+                const payloadB = buildPayload(selectedModelB, seedreamResolutionB);
+                
+                const [dataA, dataB] = await Promise.all([
+                    callAPI(payloadA),
+                    callAPI(payloadB)
+                ]);
 
-            if (data.error) {
-                throw new Error(data.error);
-            }
+                if (dataA.error) throw new Error(`Model A: ${dataA.error}`);
+                if (dataB.error) throw new Error(`Model B: ${dataB.error}`);
 
-            // Handle Thinking/Reasoning Log if present
-            if (data.thinking_process) {
-                setThinkingLog(data.thinking_process);
-            }
-
-            if (data.status === 'success' && !data.image) {
-                console.log("Mock success");
-                // Simulate typing effect for thinking log if mock
-                if (!data.thinking_process) {
+                if (dataA.image) setGeneratedImage(dataA.image);
+                if (dataB.image) setGeneratedImageB(dataB.image);
+                if (dataA.thinking_process) setThinkingLog(dataA.thinking_process);
+            } else {
+                // Single model call
+                const data = await callAPI(payloadA);
+                
+                if (data.error) throw new Error(data.error);
+                if (data.thinking_process) setThinkingLog(data.thinking_process);
+                
+                if (data.status === 'success' && !data.image) {
                     simulateThinking();
+                } else if (data.image) {
+                    setGeneratedImage(data.image);
                 }
-            } else if (data.image) {
-                setGeneratedImage(data.image);
             }
 
         } catch (err) {
             setError(err.message);
         } finally {
             setIsGenerating(false);
+            setIsGeneratingB(false);
         }
     };
 
@@ -264,66 +364,266 @@ const EditorView = () => {
                         </button>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
+                        {modelConfig.models.map(model => {
+                            const colors = getProviderColors(model.provider);
+                            const isActive = selectedModel === model.id;
+                            return (
+                                <button
+                                    key={model.id}
+                                    onClick={() => setSelectedModel(model.id)}
+                                    className={`p-3 rounded-lg border text-left transition-all relative overflow-hidden group ${isActive
+                                        ? `${colors.bg} ${colors.border}`
+                                        : 'bg-gray-900/40 border-gray-700 hover:border-gray-600'
+                                    }`}
+                                >
+                                    <div className={`font-medium text-sm ${isActive ? colors.text : 'text-gray-300'}`}>{model.name}</div>
+                                    <div className="text-[10px] text-gray-500">{model.subtitle}</div>
+                                    {/* Delete button for custom models */}
+                                    {model.id.startsWith('custom-') && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setModelConfig(removeModel(modelConfig, model.id));
+                                            }}
+                                            className="absolute top-1 right-1 w-4 h-4 bg-red-500/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
+                                            title="Remove model"
+                                        >
+                                            <X size={10} />
+                                        </button>
+                                    )}
+                                </button>
+                            );
+                        })}
+                        {/* Add Model Button */}
                         <button
-                            onClick={() => setSelectedModel('flash')}
-                            className={`p-3 rounded-lg border text-left transition-all relative overflow-hidden group ${selectedModel === 'flash'
-                                ? 'bg-yellow-500/10 border-yellow-500/50'
-                                : 'bg-gray-900/40 border-gray-700 hover:border-gray-600'
-                                }`}
+                            onClick={() => setIsAddModelOpen(true)}
+                            className="p-3 rounded-lg border border-dashed border-gray-600 hover:border-purple-500/50 bg-gray-900/20 hover:bg-purple-500/10 transition-all flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-purple-400"
+                            title="Add new model"
                         >
-                            <div className={`font-medium text-sm ${selectedModel === 'flash' ? 'text-yellow-400' : 'text-gray-300'}`}>Nano Banana</div>
-                            <div className="text-[10px] text-gray-500">Fast (Flash)</div>
-                        </button>
-                        <button
-                            onClick={() => setSelectedModel('pro')}
-                            className={`p-3 rounded-lg border text-left transition-all relative overflow-hidden group ${selectedModel === 'pro'
-                                ? 'bg-purple-500/10 border-purple-500/50'
-                                : 'bg-gray-900/40 border-gray-700 hover:border-gray-600'
-                                }`}
-                        >
-                            <div className={`font-medium text-sm ${selectedModel === 'pro' ? 'text-purple-400' : 'text-gray-300'}`}>Banana Pro</div>
-                            <div className="text-[10px] text-gray-500">Gemini 3 Pro</div>
-                        </button>
-                        <button
-                            onClick={() => setSelectedModel('seedream')}
-                            className={`p-3 rounded-lg border text-left transition-all relative overflow-hidden group ${selectedModel === 'seedream'
-                                ? 'bg-cyan-500/10 border-cyan-500/50'
-                                : 'bg-gray-900/40 border-gray-700 hover:border-gray-600'
-                                }`}
-                        >
-                            <div className={`font-medium text-sm ${selectedModel === 'seedream' ? 'text-cyan-400' : 'text-gray-300'}`}>Seedream</div>
-                            <div className="text-[10px] text-gray-500">4.5 (Cheap)</div>
+                            <Plus size={16} />
+                            <span className="text-[10px]">Add Model</span>
                         </button>
                     </div>
                     
-                    {/* Seedream Resolution Selector - Only visible when Seedream selected */}
-                    {selectedModel === 'seedream' && (
-                        <div className="mt-3 space-y-1">
+                    {/* Compare Mode Toggle */}
+                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-700/50">
+                        <input
+                            type="checkbox"
+                            id="compareMode"
+                            checked={isCompareMode}
+                            onChange={(e) => {
+                                setIsCompareMode(e.target.checked);
+                                if (!e.target.checked) {
+                                    setGeneratedImageB(null);
+                                }
+                            }}
+                            className="w-4 h-4 accent-purple-500"
+                        />
+                        <label htmlFor="compareMode" className="text-xs text-gray-400 cursor-pointer">
+                            ⚔️ Compare Mode (2 models)
+                        </label>
+                    </div>
+                    
+                    {/* Model B Selector - Only when compare mode on */}
+                    {isCompareMode && (
+                        <div className="mt-2 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                            <label className="text-xs font-bold text-purple-400/80 uppercase tracking-widest">Model B</label>
+                            <select
+                                value={selectedModelB || ''}
+                                onChange={(e) => setSelectedModelB(e.target.value)}
+                                className="w-full mt-1 bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-sm text-purple-100 focus:outline-none focus:border-purple-500"
+                            >
+                                <option value="">Select Model B...</option>
+                                {modelConfig.models.map(model => (
+                                    <option key={model.id} value={model.id}>{model.name} ({model.subtitle})</option>
+                                ))}
+                            </select>
+                            
+                            {/* Model B Seedream Resolution */}
+                            {selectedModelB && modelConfig.models.find(m => m.id === selectedModelB)?.provider === 'seedream' && (
+                                <div className="mt-2">
+                                    <label className="text-[10px] text-purple-400/60">Resolution (B)</label>
+                                    <select
+                                        value={seedreamResolutionB}
+                                        onChange={(e) => setSeedreamResolutionB(e.target.value)}
+                                        className="w-full mt-1 bg-gray-800 border border-purple-500/30 rounded px-2 py-1 text-xs text-purple-100"
+                                    >
+                                        <option value="2K">2K (Auto)</option>
+                                        <option value="4K">4K (High)</option>
+                                        <option value="from_image_1">From Image 1</option>
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    
+                    {/* Seedream Resolution Selector - Only visible when Seedream provider selected */}
+                    {modelConfig.models.find(m => m.id === selectedModel)?.provider === 'seedream' && (
+                        <div className="mt-3 space-y-2">
                             <label className="text-xs font-bold text-cyan-400/80 uppercase tracking-widest">Seedream Resolution</label>
                             <div className="relative">
                                 <select
-                                    value={seedreamResolution}
-                                    onChange={(e) => setSeedreamResolution(e.target.value)}
+                                    value={seedreamResolution.startsWith('custom:') ? 'custom' : seedreamResolution}
+                                    onChange={(e) => {
+                                        if (e.target.value === 'custom') {
+                                            setSeedreamResolution('custom:');
+                                        } else {
+                                            setSeedreamResolution(e.target.value);
+                                        }
+                                    }}
                                     className="w-full bg-gray-800 border-2 border-cyan-500/30 hover:border-cyan-500/50 focus:border-cyan-500 rounded-lg px-3 py-2 text-xs text-cyan-100 focus:outline-none transition-all appearance-none cursor-pointer shadow-lg"
                                 >
-                                    {SEEDREAM_RESOLUTIONS.map(res => (
+                                    {seedreamResolutions.map(res => (
                                         <option key={res.value} value={res.value}>{res.label}</option>
                                     ))}
+                                    <option value="custom">✏️ Custom...</option>
                                 </select>
                                 <div className="absolute right-3 top-2.5 pointer-events-none text-cyan-400">
                                     <Box size={12} />
                                 </div>
                             </div>
+                            
+                            {/* Custom Resolution Input */}
+                            {seedreamResolution.startsWith('custom:') && (() => {
+                                const currentModel = modelConfig.models.find(m => m.id === selectedModel);
+                                const minPixels = (() => {
+                                    const res = currentModel?.minResolution || '2048x2048';
+                                    const parts = res.toLowerCase().split('x');
+                                    return parts.length === 2 ? parseInt(parts[0]) * parseInt(parts[1]) : 4194304;
+                                })();
+                                
+                                const customValue = seedreamResolution.replace('custom:', '');
+                                
+                                // Parse the custom input value
+                                const parseCustom = (val) => {
+                                    if (!val) return null;
+                                    // Check for ratio format (e.g., "1:1", "16:9")
+                                    if (val.includes(':')) {
+                                        const parts = val.split(':').map(p => parseFloat(p.trim()));
+                                        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1]) && parts[1] > 0) {
+                                            const ratio = parts[0] / parts[1];
+                                            // Calculate dimensions that meet min pixels with this ratio
+                                            const h = Math.ceil(Math.sqrt(minPixels / ratio));
+                                            const w = Math.ceil(h * ratio);
+                                            return { w, h, type: 'ratio', ratio: `${parts[0]}:${parts[1]}` };
+                                        }
+                                    }
+                                    // Check for WxH format (support both 'x' and '×')
+                                    const normalized = val.toLowerCase().replace(/×/g, 'x');
+                                    if (normalized.includes('x')) {
+                                        const parts = normalized.split('x').map(p => parseInt(p.trim()));
+                                        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                                            return { w: parts[0], h: parts[1], type: 'exact' };
+                                        }
+                                    }
+                                    return null;
+                                };
+                                
+                                const parsed = parseCustom(customValue);
+                                
+                                const maxPixels = (() => {
+                                    const res = currentModel?.maxResolution || '4096x4096';
+                                    const parts = res.toLowerCase().split('x');
+                                    return parts.length === 2 ? parseInt(parts[0]) * parseInt(parts[1]) : 16777216;
+                                })();
+                                
+                                // Check validation
+                                const getValidation = () => {
+                                    if (!parsed) return null;
+                                    const pixels = parsed.w * parsed.h;
+                                    if (pixels < minPixels) return { valid: false, msg: `⚠️ Below min (${(minPixels/1000000).toFixed(1)}M)` };
+                                    if (pixels > maxPixels) return { valid: false, msg: `⚠️ Above max (${(maxPixels/1000000).toFixed(1)}M)` };
+                                    return { valid: true, msg: '✓ Valid' };
+                                };
+                                const validation = getValidation();
+                                
+                                // Multiplier function
+                                const applyMultiplier = (mult) => {
+                                    if (!parsed) return;
+                                    const newW = Math.round(parsed.w * mult);
+                                    const newH = Math.round(parsed.h * mult);
+                                    setSeedreamResolution(`custom:${newW}x${newH}`);
+                                };
+                                
+                                return (
+                                    <div className="space-y-2">
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={customValue}
+                                                onChange={(e) => setSeedreamResolution('custom:' + e.target.value)}
+                                                placeholder="1:1 or 1920x1080"
+                                                className="flex-1 bg-gray-800 border border-cyan-500/40 hover:border-cyan-500/60 focus:border-cyan-500 rounded-lg px-3 py-2 text-sm text-cyan-100 focus:outline-none transition-all placeholder:text-gray-500"
+                                            />
+                                            {/* Scale controls */}
+                                            {parsed && (
+                                                <div className="flex items-center gap-1">
+                                                    <button
+                                                        onClick={() => applyMultiplier(1 / (1 + parseFloat(document.getElementById('scaleAmount')?.value || 0.1)))}
+                                                        className="px-2 py-1 text-sm bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded border border-cyan-500/30"
+                                                        title="Scale down"
+                                                    >
+                                                        −
+                                                    </button>
+                                                    <input
+                                                        id="scaleAmount"
+                                                        type="number"
+                                                        defaultValue="0.1"
+                                                        step="0.1"
+                                                        min="0.1"
+                                                        max="2"
+                                                        className="w-12 bg-gray-800 border border-cyan-500/30 rounded px-1 py-1 text-[10px] text-cyan-100 text-center focus:outline-none"
+                                                    />
+                                                    <button
+                                                        onClick={() => applyMultiplier(1 + parseFloat(document.getElementById('scaleAmount')?.value || 0.1))}
+                                                        className="px-2 py-1 text-sm bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded border border-cyan-500/30"
+                                                        title="Scale up"
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {parsed && (
+                                            <div className="flex items-center justify-between text-[10px]">
+                                                <span className="text-cyan-400">
+                                                    {parsed.type === 'ratio' 
+                                                        ? `📐 ${parsed.ratio} → ${parsed.w}x${parsed.h} (${(parsed.w * parsed.h / 1000000).toFixed(1)}M px)`
+                                                        : `📏 ${parsed.w}x${parsed.h} (${(parsed.w * parsed.h / 1000000).toFixed(1)}M px)`
+                                                    }
+                                                </span>
+                                                <span className={validation?.valid ? 'text-green-400' : 'text-yellow-400'}>
+                                                    {validation?.msg}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {!parsed && customValue && (
+                                            <p className="text-[10px] text-gray-500">Enter ratio (1:1) or size (1920x1080)</p>
+                                        )}
+                                    </div>
+                                );
+                            })()}
                             {/* Validation Display */}
                             {(() => {
-                                const MIN_PIXELS = 3686400;
-                                const MAX_PIXELS = 16777216;
+                                const currentModel = modelConfig.models.find(m => m.id === selectedModel);
+                                const minRes = currentModel?.minResolution || '2048x2048';
+                                const maxRes = currentModel?.maxResolution || '4096x4096';
+                                
+                                const parsePixels = (res) => {
+                                    const parts = res.toLowerCase().split('x');
+                                    return parts.length === 2 ? parseInt(parts[0]) * parseInt(parts[1]) : 0;
+                                };
+                                
+                                const MIN_PIXELS = parsePixels(minRes);
+                                const MAX_PIXELS = parsePixels(maxRes);
+                                const minM = (MIN_PIXELS / 1000000).toFixed(1);
+                                const maxM = (MAX_PIXELS / 1000000).toFixed(1);
                                 
                                 if (['2K', '4K'].includes(seedreamResolution)) {
                                     return <p className="text-[10px] text-green-400">✓ Valid preset</p>;
                                 }
                                 if (['from_image_1', 'from_image_2'].includes(seedreamResolution)) {
-                                    return <p className="text-[10px] text-cyan-400">📐 Will auto-scale to valid range (3.7M - 16.8M px)</p>;
+                                    return <p className="text-[10px] text-cyan-400">📐 Will auto-scale to valid range ({minM}M - {maxM}M px)</p>;
                                 }
                                 if (seedreamResolution.includes('x')) {
                                     const parts = seedreamResolution.split('x');
@@ -336,7 +636,7 @@ const EditorView = () => {
                                         if (isValid) {
                                             return <p className="text-[10px] text-green-400">✓ {(pixels/1000000).toFixed(1)}M pixels</p>;
                                         } else {
-                                            return <p className="text-[10px] text-red-400">✗ {(pixels/1000000).toFixed(1)}M pixels (need 3.7M-16.8M)</p>;
+                                            return <p className="text-[10px] text-red-400">✗ {(pixels/1000000).toFixed(1)}M pixels (need {minM}M-{maxM}M)</p>;
                                         }
                                     }
                                 }
@@ -402,8 +702,9 @@ const EditorView = () => {
                                         {imageDimensions[idx] && (
                                             <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-[8px] text-center py-0.5">
                                                 <span className="text-gray-300">{imageDimensions[idx].w}×{imageDimensions[idx].h}</span>
-                                                {selectedModel === 'seedream' && (() => {
-                                                    const v = getSeedreamValidation(imageDimensions[idx].w, imageDimensions[idx].h);
+                                                {modelConfig.models.find(m => m.id === selectedModel)?.provider === 'seedream' && (() => {
+                                                    const currentModel = modelConfig.models.find(m => m.id === selectedModel);
+                                                    const v = getSeedreamValidation(imageDimensions[idx].w, imageDimensions[idx].h, currentModel);
                                                     const colors = {
                                                         valid: 'text-green-400',
                                                         scale_up: 'text-yellow-400',
@@ -452,8 +753,8 @@ const EditorView = () => {
                         />
                     </div>
 
-                    {/* Aspect Ratio & Resolution - Only for Gemini models */}
-                    {selectedModel !== 'seedream' && (
+                    {/* Aspect Ratio & Resolution - Only for non-Seedream providers (Gemini, etc.) */}
+                    {modelConfig.models.find(m => m.id === selectedModel)?.provider !== 'seedream' && (
                     <div className="grid grid-cols-2 gap-3">
                         {/* Aspect Ratio */}
                         <div className="space-y-1">
@@ -558,11 +859,82 @@ const EditorView = () => {
 
             {/* Right Canvas / Preview Area */}
             <div className="flex-grow bg-[#13141f] relative overflow-hidden flex flex-col">
+                {/* Compare View Controls - Only when compare mode has results */}
+                {isCompareMode && generatedImage && generatedImageB && (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-black/60 backdrop-blur-sm rounded-lg p-1">
+                        <button
+                            onClick={() => setCompareView('side')}
+                            className={`px-3 py-1 text-xs rounded ${compareView === 'side' ? 'bg-purple-500 text-white' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Side by Side
+                        </button>
+                        <button
+                            onClick={() => setCompareView('a')}
+                            className={`px-3 py-1 text-xs rounded ${compareView === 'a' ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Full A
+                        </button>
+                        <button
+                            onClick={() => setCompareView('b')}
+                            className={`px-3 py-1 text-xs rounded ${compareView === 'b' ? 'bg-purple-500 text-white' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Full B
+                        </button>
+                    </div>
+                )}
+                
                 {/* Canvas Area */}
                 <div className="flex-grow flex items-center justify-center p-8 relative">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-800/20 via-[#13141f]/0 to-[#13141f] pointer-events-none" />
 
-                    {generatedImage ? (
+                    {/* Compare Mode Side-by-Side Display */}
+                    {isCompareMode && (generatedImage || generatedImageB || isGenerating || isGeneratingB) ? (
+                        <div className={`relative z-10 w-full h-full flex ${compareView === 'side' ? 'gap-4' : ''}`}>
+                            {/* Model A Result */}
+                            {(compareView === 'side' || compareView === 'a') && (
+                                <div className={`${compareView === 'side' ? 'w-1/2' : 'w-full'} flex flex-col items-center justify-center`}>
+                                    <div className="mb-2 px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full text-xs text-blue-400">
+                                        {modelConfig.models.find(m => m.id === selectedModel)?.name || 'Model A'}
+                                    </div>
+                                    {isGenerating ? (
+                                        <div className="flex items-center gap-2 text-gray-400">
+                                            <Loader2 className="w-6 h-6 animate-spin" />
+                                            <span>Generating...</span>
+                                        </div>
+                                    ) : generatedImage ? (
+                                        <div className="shadow-2xl rounded-lg overflow-hidden border border-gray-700/50 bg-[#0f1016] group cursor-zoom-in"
+                                             onClick={() => setLightboxImage(generatedImage)}>
+                                            <img src={generatedImage} alt="Result A" className="max-w-full max-h-[70vh] object-contain" />
+                                        </div>
+                                    ) : (
+                                        <div className="text-gray-500 text-sm">No result yet</div>
+                                    )}
+                                </div>
+                            )}
+                            
+                            {/* Model B Result */}
+                            {(compareView === 'side' || compareView === 'b') && (
+                                <div className={`${compareView === 'side' ? 'w-1/2' : 'w-full'} flex flex-col items-center justify-center`}>
+                                    <div className="mb-2 px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-xs text-purple-400">
+                                        {modelConfig.models.find(m => m.id === selectedModelB)?.name || 'Model B'}
+                                    </div>
+                                    {isGeneratingB ? (
+                                        <div className="flex items-center gap-2 text-gray-400">
+                                            <Loader2 className="w-6 h-6 animate-spin" />
+                                            <span>Generating...</span>
+                                        </div>
+                                    ) : generatedImageB ? (
+                                        <div className="shadow-2xl rounded-lg overflow-hidden border border-gray-700/50 bg-[#0f1016] group cursor-zoom-in"
+                                             onClick={() => setLightboxImage(generatedImageB)}>
+                                            <img src={generatedImageB} alt="Result B" className="max-w-full max-h-[70vh] object-contain" />
+                                        </div>
+                                    ) : (
+                                        <div className="text-gray-500 text-sm">No result yet</div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    ) : generatedImage ? (
                         <div className="relative z-10 shadow-2xl rounded-lg overflow-hidden border border-gray-700/50 bg-[#0f1016] group">
                             <img
                                 src={generatedImage}
@@ -674,7 +1046,17 @@ const EditorView = () => {
                 </div>
             )}
 
-            {/* Existing Models */}
+            {/* Add Model Modal */}
+            <AddModelModal
+                isOpen={isAddModelOpen}
+                onClose={() => setIsAddModelOpen(false)}
+                onSave={(newModel) => {
+                    setModelConfig(addModel(modelConfig, newModel));
+                }}
+                providers={modelConfig.providers}
+            />
+
+            {/* Gallery Picker Modal */}
             <GalleryPickerModal
                 isOpen={isGalleryOpen}
                 onClose={() => setIsGalleryOpen(false)}

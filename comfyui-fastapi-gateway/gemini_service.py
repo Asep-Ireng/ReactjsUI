@@ -29,6 +29,39 @@ def reset_gemini_chat():
     chat_session = None
     print("INFO: Gemini Chat Session Reset")
 
+async def test_gemini_model(model_name: str) -> dict:
+    """
+    Test if a Gemini model name is valid by making a minimal API call.
+    Returns: { success: bool, error?: str }
+    """
+    if not API_KEY:
+        return {"success": False, "error": "GOOGLE_API_KEY not configured"}
+    
+    try:
+        client = genai.Client(api_key=API_KEY)
+        
+        # Send a minimal text-only request to test model availability
+        config = types.GenerateContentConfig(
+            response_modalities=['TEXT'],
+        )
+        
+        response = client.models.generate_content(
+            model=model_name,
+            contents="Hello, respond with just 'OK'.",
+            config=config
+        )
+        
+        # If we got here without exception, model exists
+        return {"success": True, "message": f"Model '{model_name}' is accessible"}
+    
+    except Exception as e:
+        error_str = str(e)
+        if "404" in error_str:
+            return {"success": False, "error": f"Model '{model_name}' not found"}
+        if "403" in error_str:
+            return {"success": False, "error": f"Access denied for model '{model_name}'"}
+        return {"success": False, "error": error_str}
+
 def _process_images(image_inputs: list) -> list:
     """Helper to process Base64/URL images into PIL Images."""
     images = []
@@ -140,11 +173,18 @@ async def generate_image_gemini(
         raise HTTPException(status_code=500, detail="GOOGLE_API_KEY not configured. Please add it to your .env file.")
 
     try:
-        # Determine model
-        if model_alias == "pro":
-            target_model_name = MODEL_NANO_BANANA_PRO
+        # Determine model - check for known aliases, otherwise use as actual model name
+        known_aliases = {
+            "flash": MODEL_NANO_BANANA,
+            "pro": MODEL_NANO_BANANA_PRO,
+        }
+        
+        if model_alias in known_aliases:
+            target_model_name = known_aliases[model_alias]
         else:
-            target_model_name = MODEL_NANO_BANANA
+            # Assume it's an actual model name (for custom models)
+            target_model_name = model_alias
+            print(f"DEBUG: Using custom model name: {target_model_name}")
         
         # Initialize Client
         client = genai.Client(api_key=API_KEY)

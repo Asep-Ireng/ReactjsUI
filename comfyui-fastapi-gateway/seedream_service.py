@@ -17,6 +17,41 @@ ARK_API_KEY = os.getenv("ARK_API_KEY")
 SEEDREAM_BASE_URL = "https://ark.ap-southeast.bytepluses.com/api/v3"
 SEEDREAM_MODEL = "seedream-4-5-251128"
 
+
+async def test_seedream_model(model_name: str) -> dict:
+    """
+    Test if a Seedream model name is valid by making a minimal API call.
+    Returns: { success: bool, error?: str }
+    """
+    if not ARK_API_KEY:
+        return {"success": False, "error": "ARK_API_KEY not configured"}
+    
+    try:
+        client = OpenAI(
+            base_url=SEEDREAM_BASE_URL,
+            api_key=ARK_API_KEY,
+        )
+        
+        # Test with minimal prompt - just validating model access
+        response = client.images.generate(
+            model=model_name,
+            prompt="test",
+            size="2K",
+            response_format="b64_json",
+            extra_body={"watermark": False},
+        )
+        
+        # If we got here without exception, model exists
+        return {"success": True, "message": f"Model '{model_name}' is accessible"}
+    
+    except Exception as e:
+        error_str = str(e)
+        if "404" in error_str or "not found" in error_str.lower():
+            return {"success": False, "error": f"Model '{model_name}' not found"}
+        if "403" in error_str or "unauthorized" in error_str.lower():
+            return {"success": False, "error": f"Access denied for model '{model_name}'"}
+        return {"success": False, "error": error_str}
+
 # Recommended resolutions for different aspect ratios (min 3.7M pixels)
 ASPECT_RATIO_TO_SIZE = {
     "1:1": "2048x2048",
@@ -111,21 +146,27 @@ def _prepare_image_for_api(image_input: str) -> str:
 
 async def generate_image_seedream(
     prompt: str,
+    model_name: str = None,  # The actual API model identifier
     image_inputs: list = None,
     parameters: dict = None
 ):
     """
-    Generates images using Seedream 4.5 API.
+    Generates images using Seedream API.
     
     Parameters:
         prompt: Text description
+        model_name: API model identifier (e.g., 'seedream-4-0-250828', 'seedream-4-5-251128')
         image_inputs: List of base64/URL images for reference
         parameters: {
             resolution: "auto", "2K", "4K", "from_image_1", "from_image_2", or "WxH"
             aspectRatio: "1:1", "16:9", etc. (used if resolution is manual)
         }
     """
+    # Use provided model_name or fall back to default
+    actual_model = model_name or SEEDREAM_MODEL
+    
     print(f"DEBUG: generate_image_seedream called")
+    print(f"DEBUG: Using model: {actual_model}")
     print(f"DEBUG: prompt length: {len(prompt)}")
     print(f"DEBUG: image_inputs count: {len(image_inputs) if image_inputs else 0}")
     
@@ -152,17 +193,42 @@ async def generate_image_seedream(
 
         # Determine size parameter
         resolution = parameters.get("resolution", "auto") if parameters else "auto"
+        
+        # Strip 'custom:' prefix if present (sent from frontend custom input)
+        if resolution.startswith("custom:"):
+            resolution = resolution.replace("custom:", "")
+            print(f"DEBUG: Stripped custom prefix, resolution: {resolution}")
+        
         size = None  # None means auto (model decides)
+
+        # Parse resolution constraints from parameters (sent from frontend model config)
+        def _parse_resolution_to_pixels(res_str: str, default: int) -> int:
+            """Convert 'WxH' string to total pixels, or return default."""
+            if not res_str:
+                return default
+            try:
+                parts = res_str.lower().split('x')
+                if len(parts) == 2:
+                    return int(parts[0]) * int(parts[1])
+            except:
+                pass
+            return default
+
+        # Get min/max from parameters, with Seedream 4.5 defaults
+        min_res_str = parameters.get("minResolution") if parameters else None
+        max_res_str = parameters.get("maxResolution") if parameters else None
+        MIN_PIXELS = _parse_resolution_to_pixels(min_res_str, 3686400)   # Default: ~1920x1920
+        MAX_PIXELS = _parse_resolution_to_pixels(max_res_str, 16777216)  # Default: 4096x4096
+        
+        print(f"DEBUG: Resolution constraints - Min: {MIN_PIXELS:,} px, Max: {MAX_PIXELS:,} px")
 
         def _validate_and_adjust_dimensions(w: int, h: int) -> tuple:
             """
             Validates and adjusts dimensions to meet Seedream requirements:
-            - Total pixels: [3,686,400 - 16,777,216]
+            - Total pixels: [MIN_PIXELS - MAX_PIXELS]
             - Aspect ratio: [1/16 - 16]
             Returns: (adjusted_w, adjusted_h, is_valid, message)
             """
-            MIN_PIXELS = 3686400   # 2560x1440
-            MAX_PIXELS = 16777216  # 4096x4096
             MIN_RATIO = 1/16
             MAX_RATIO = 16
             
@@ -271,7 +337,7 @@ async def generate_image_seedream(
 
         # Build API call kwargs
         api_kwargs = {
-            "model": SEEDREAM_MODEL,
+            "model": actual_model,  # Use the model passed from request
             "prompt": prompt,
             "response_format": "b64_json",  # Get base64 directly
             "extra_body": extra_body,

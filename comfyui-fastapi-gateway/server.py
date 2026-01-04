@@ -187,12 +187,16 @@ async def generate_external(req: ExternalGenerateRequest):
             image_inputs.append(req.image)
         
         # Route to appropriate service based on model
-        if req.model in ["seedream", "sd45", "seedream45"]:
-            # Seedream 4.5
+        # Check if model name starts with 'seedream' or matches known aliases
+        is_seedream = req.model.lower().startswith("seedream") or req.model.lower() in ["sd45", "sd40"]
+        
+        if is_seedream:
+            # Seedream service
             from seedream_service import generate_image_seedream
-            print("INFO: Routing to Seedream 4.5 service")
+            print(f"INFO: Routing to Seedream service (model: {req.model})")
             result = await generate_image_seedream(
                 prompt=req.prompt,
+                model_name=req.model,  # Pass the actual model name
                 image_inputs=image_inputs if image_inputs else None,
                 parameters=req.parameters
             )
@@ -239,6 +243,33 @@ async def reset_chat_history():
     except Exception as e:
         print(f"Reset Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+class TestModelRequest(BaseModel):
+    provider: str  # 'gemini' or 'seedream'
+    model_name: str  # The actual API model identifier
+
+@app.post("/api/external/test-model")
+async def test_model(req: TestModelRequest):
+    """
+    Test if a model name is valid by sending a minimal request to the provider.
+    Returns success/failure without generating an actual image.
+    """
+    print(f"INFO: /api/external/test-model called for provider={req.provider}, model={req.model_name}")
+    
+    try:
+        if req.provider == "seedream":
+            # Test Seedream model
+            from seedream_service import test_seedream_model
+            result = await test_seedream_model(req.model_name)
+        else:
+            # Test Gemini model (default)
+            from gemini_service import test_gemini_model
+            result = await test_gemini_model(req.model_name)
+        
+        return result
+    except Exception as e:
+        print(f"Test Model Error: {e}")
+        return {"success": False, "error": str(e)}
 
 @app.post("/api/preview-controlnet-preprocessor")
 async def preview_controlnet(req: ControlNetPreviewRequest):
