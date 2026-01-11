@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Wand2, Upload, Eraser, Move, Download, RefreshCw, PanelRightOpen, PanelRightClose, Palette, Box, Folder, PenTool, Sparkles, Image as ImageIcon, Loader2, BrainCircuit, RefreshCcw, Plus, X } from 'lucide-react';
+import { Wand2, Upload, Eraser, Move, Download, RefreshCw, PanelRightOpen, PanelRightClose, Palette, Box, Folder, PenTool, Sparkles, Image as ImageIcon, Loader2, BrainCircuit, RefreshCcw, Plus, X, Clipboard } from 'lucide-react';
 import { GENERATE_API_BASE } from '../api/comfyui';
 import GalleryPickerModal from './GalleryPickerModal';
 import DrawingCanvas from './DrawingCanvas';
@@ -420,7 +420,7 @@ const EditorView = () => {
                         </button>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
-                        {modelConfig.models.map(model => {
+                        {modelConfig.models.filter(model => !model.isVideo).map(model => {
                             const colors = getProviderColors(model.provider);
                             const isActive = selectedModel === model.id;
                             return (
@@ -716,7 +716,7 @@ const EditorView = () => {
                     </div>
 
                     {/* Upload Buttons - Always visible */}
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                         <label className="flex flex-col items-center justify-center p-3 border border-dashed border-gray-700 rounded-lg hover:bg-gray-800/50 cursor-pointer transition-colors group">
                             <Upload className="w-4 h-4 text-gray-500 group-hover:text-gray-300 mb-1" />
                             <span className="text-xs text-gray-500">Upload</span>
@@ -728,6 +728,34 @@ const EditorView = () => {
                         >
                             <Folder className="w-4 h-4 text-gray-500 group-hover:text-gray-300 mb-1" />
                             <span className="text-xs text-gray-500">Gallery</span>
+                        </button>
+                        <button
+                            onClick={async () => {
+                                try {
+                                    const clipboardItems = await navigator.clipboard.read();
+                                    for (const item of clipboardItems) {
+                                        for (const type of item.types) {
+                                            if (type.startsWith('image/')) {
+                                                const blob = await item.getType(type);
+                                                const reader = new FileReader();
+                                                reader.onload = (e) => {
+                                                    setInputImages(prev => [...prev, e.target.result]);
+                                                };
+                                                reader.readAsDataURL(blob);
+                                                return;
+                                            }
+                                        }
+                                    }
+                                    setError('No image found in clipboard');
+                                } catch (err) {
+                                    console.error('Clipboard error:', err);
+                                    setError('Failed to paste from clipboard. Make sure you have an image copied.');
+                                }
+                            }}
+                            className="flex flex-col items-center justify-center p-3 border border-dashed border-gray-700 rounded-lg hover:bg-gray-800/50 cursor-pointer transition-colors group"
+                        >
+                            <Clipboard className="w-4 h-4 text-gray-500 group-hover:text-gray-300 mb-1" />
+                            <span className="text-xs text-gray-500">Paste</span>
                         </button>
                     </div>
 

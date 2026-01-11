@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Video, Upload, Folder, Play, Download, Loader2, X, Film, Volume2, Camera, Clock, Ratio, Dice5 } from 'lucide-react';
+import { Video, Upload, Folder, Play, Download, Loader2, X, Film, Volume2, Camera, Clock, Ratio, Dice5, Maximize2 } from 'lucide-react';
 import { GENERATE_API_BASE } from '../api/comfyui';
 import GalleryPickerModal from './GalleryPickerModal';
 
@@ -30,6 +30,9 @@ const VideoSection = () => {
     
     const fileInputFirstRef = useRef(null);
     const fileInputLastRef = useRef(null);
+    
+    // Lightbox State
+    const [lightboxImage, setLightboxImage] = useState(null);
 
     const handleGenerate = async () => {
         if (!prompt.trim()) {
@@ -140,11 +143,23 @@ const VideoSection = () => {
                     </label>
                     
                     {firstFrameImage ? (
-                        <div className="relative rounded-lg overflow-hidden border border-purple-500/30">
-                            <img src={firstFrameImage} alt="First Frame" className="w-full h-32 object-cover" />
+                        <div className="relative rounded-lg overflow-hidden border border-purple-500/30 group">
+                            <img 
+                                src={firstFrameImage} 
+                                alt="First Frame" 
+                                className="w-full h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity" 
+                                onClick={() => setLightboxImage(firstFrameImage)}
+                            />
+                            <button
+                                onClick={() => setLightboxImage(firstFrameImage)}
+                                className="absolute bottom-2 left-2 w-6 h-6 bg-gray-900/80 hover:bg-gray-800 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="View full size"
+                            >
+                                <Maximize2 size={12} />
+                            </button>
                             <button
                                 onClick={() => setFirstFrameImage(null)}
-                                className="absolute top-2 right-2 w-6 h-6 bg-red-500/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center"
+                                className="absolute top-2 right-2 w-6 h-6 bg-red-500/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             >
                                 <X size={14} />
                             </button>
@@ -180,11 +195,23 @@ const VideoSection = () => {
                     </label>
                     
                     {lastFrameImage ? (
-                        <div className="relative rounded-lg overflow-hidden border border-purple-500/30">
-                            <img src={lastFrameImage} alt="Last Frame" className="w-full h-32 object-cover" />
+                        <div className="relative rounded-lg overflow-hidden border border-purple-500/30 group">
+                            <img 
+                                src={lastFrameImage} 
+                                alt="Last Frame" 
+                                className="w-full h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity" 
+                                onClick={() => setLightboxImage(lastFrameImage)}
+                            />
+                            <button
+                                onClick={() => setLightboxImage(lastFrameImage)}
+                                className="absolute bottom-2 left-2 w-6 h-6 bg-gray-900/80 hover:bg-gray-800 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="View full size"
+                            >
+                                <Maximize2 size={12} />
+                            </button>
                             <button
                                 onClick={() => setLastFrameImage(null)}
-                                className="absolute top-2 right-2 w-6 h-6 bg-red-500/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center"
+                                className="absolute top-2 right-2 w-6 h-6 bg-red-500/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             >
                                 <X size={14} />
                             </button>
@@ -437,6 +464,27 @@ const VideoSection = () => {
                 onSelectImage={handleGallerySelect}
                 onClose={() => setIsGalleryOpen(false)}
             />
+
+            {/* Lightbox Modal */}
+            {lightboxImage && (
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-6"
+                    onClick={() => setLightboxImage(null)}
+                >
+                    <button
+                        onClick={() => setLightboxImage(null)}
+                        className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors"
+                    >
+                        <X size={24} />
+                    </button>
+                    <img 
+                        src={lightboxImage} 
+                        alt="Full size preview" 
+                        className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            )}
         </div>
     );
 };
