@@ -54,13 +54,50 @@ def save_video_to_disk(video_data: bytes, model_name: str = "seedance") -> str:
 def _prepare_image_for_api(image_input: str) -> str:
     """
     Prepare image for Seedance API.
-    Returns URL or data URL format.
+    - Downloads localhost/local URLs and converts to base64 (API can't access local servers)
+    - Public URLs are returned as-is
+    - Base64 data is formatted as data URL
     """
+    print(f"DEBUG: _prepare_image_for_api input: {image_input[:100]}...")
+    
     if image_input.startswith("http"):
-        return image_input
+        # Check if it's a localhost/local URL - download and convert to base64
+        if "localhost" in image_input or "127.0.0.1" in image_input or "192.168." in image_input:
+            print(f"DEBUG: Local URL detected, downloading and converting to base64...")
+            try:
+                response = requests.get(image_input, timeout=10)
+                response.raise_for_status()
+                image_bytes = response.content
+                
+                # Detect image type from content
+                content_type = response.headers.get('content-type', 'image/png')
+                if 'jpeg' in content_type or 'jpg' in content_type:
+                    mime_type = 'image/jpeg'
+                elif 'png' in content_type:
+                    mime_type = 'image/png'
+                elif 'webp' in content_type:
+                    mime_type = 'image/webp'
+                else:
+                    mime_type = 'image/png'  # fallback
+                
+                b64_data = base64.b64encode(image_bytes).decode('utf-8')
+                data_url = f"data:{mime_type};base64,{b64_data}"
+                print(f"DEBUG: Converted local URL to base64 data URL ({len(b64_data)} chars)")
+                return data_url
+            except Exception as e:
+                print(f"ERROR: Failed to download local image: {e}")
+                raise HTTPException(status_code=400, detail=f"Failed to download image from {image_input}: {e}")
+        else:
+            # Public URL - return as-is
+            print(f"DEBUG: Public URL, using as-is")
+            return image_input
     else:
+        # Base64 data
         if not image_input.startswith("data:"):
-            return f"data:image/png;base64,{image_input}"
+            result = f"data:image/png;base64,{image_input}"
+            print(f"DEBUG: Added data URL prefix to base64")
+            return result
+        print(f"DEBUG: Already a data URL")
         return image_input
 
 

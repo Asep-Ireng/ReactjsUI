@@ -432,12 +432,11 @@ const VideoSection = () => {
             </div>
 
             {/* Gallery Picker Modal */}
-            {isGalleryOpen && (
-                <GalleryPickerModal
-                    onSelect={handleGallerySelect}
-                    onClose={() => setIsGalleryOpen(false)}
-                />
-            )}
+            <GalleryPickerModal
+                isOpen={isGalleryOpen}
+                onSelectImage={handleGallerySelect}
+                onClose={() => setIsGalleryOpen(false)}
+            />
         </div>
     );
 };
