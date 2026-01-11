@@ -104,6 +104,14 @@ const EditorView = () => {
     const [compareView, setCompareView] = useState('side'); // 'side' | 'a' | 'b'
     const [seedreamResolutionB, setSeedreamResolutionB] = useState('2K'); // Resolution for Model B
     
+    // Video Generation Settings (Seedance)
+    const [videoResolution, setVideoResolution] = useState('720p');  // 480p, 720p, 1080p
+    const [videoRatio, setVideoRatio] = useState('16:9');            // 16:9, 4:3, 1:1, 3:4, 9:16, 21:9, adaptive
+    const [videoDuration, setVideoDuration] = useState(5);           // 4-12 seconds, or -1 for auto
+    const [videoCameraFixed, setVideoCameraFixed] = useState(false);
+    const [videoGenerateAudio, setVideoGenerateAudio] = useState(false);
+    const [generatedVideo, setGeneratedVideo] = useState(null);      // Video URL or base64
+    
     // Seedream-specific resolution (uses Method 2 with valid pixel ranges)
     const [seedreamResolution, setSeedreamResolution] = useState('2K');
     
@@ -164,10 +172,15 @@ const EditorView = () => {
     const handleGenerate = async () => {
         if (!prompt && inputImages.length === 0 && !doodleData) return;
 
+        // Check if selected model is a video model
+        const currentModel = modelConfig.models.find(m => m.id === selectedModel);
+        const isVideoModel = currentModel?.isVideo || currentModel?.provider === 'seedance';
+
         setIsGenerating(true);
         if (isCompareMode && selectedModelB) setIsGeneratingB(true);
         setError(null);
         setThinkingLog('');
+        if (isVideoModel) setGeneratedVideo(null); // Clear previous video
 
         try {
             // Prepare images
@@ -176,6 +189,49 @@ const EditorView = () => {
                 imagesToSend = [doodleData, ...inputImages];
             }
 
+            // VIDEO GENERATION PATH
+            if (isVideoModel) {
+                const modelToSend = currentModel?.modelName || selectedModel;
+                const payload = {
+                    prompt,
+                    model: modelToSend,
+                    first_frame_image: imagesToSend.length > 0 ? imagesToSend[0] : undefined,
+                    last_frame_image: imagesToSend.length > 1 ? imagesToSend[1] : undefined,
+                    resolution: videoResolution,
+                    ratio: videoRatio,
+                    duration: videoDuration,
+                    camera_fixed: videoCameraFixed,
+                    generate_audio: videoGenerateAudio
+                };
+
+                setThinkingLog('> Submitting video generation task...\n> This may take 30-120 seconds...');
+
+                const response = await fetch(`${GENERATE_API_BASE}/video/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (data.error || data.detail) {
+                    throw new Error(data.error || data.detail);
+                }
+
+                if (data.video_url) {
+                    setGeneratedVideo(data.video_url);
+                    setThinkingLog(prev => prev + `\n> Video generated successfully!\n> Duration: ${data.duration || 'N/A'}s`);
+                } else if (data.video_base64) {
+                    setGeneratedVideo(`data:video/mp4;base64,${data.video_base64}`);
+                    setThinkingLog(prev => prev + `\n> Video generated successfully!`);
+                } else {
+                    throw new Error('No video returned from API');
+                }
+                
+                setIsGenerating(false);
+                return;
+            }
+
+            // IMAGE GENERATION PATH (existing logic)
             // Helper to build payload for a model
             const buildPayload = (modelId, seedreamRes) => {
                 const modelCfg = modelConfig.models.find(m => m.id === modelId);

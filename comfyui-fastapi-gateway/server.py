@@ -271,6 +271,68 @@ async def test_model(req: TestModelRequest):
         print(f"Test Model Error: {e}")
         return {"success": False, "error": str(e)}
 
+# Video Generation Request Model
+class VideoGenerateRequest(BaseModel):
+    prompt: str
+    model: str = "seedance-1-5-pro-251215"
+    first_frame_image: Optional[str] = None  # Base64 or URL for first frame (I2V)
+    last_frame_image: Optional[str] = None   # Base64 or URL for last frame
+    resolution: str = "720p"                 # 480p, 720p, 1080p
+    ratio: Optional[str] = None              # 16:9, 4:3, 1:1, 3:4, 9:16, 21:9, adaptive
+    duration: int = 5                        # 4-12 seconds, or -1 for auto
+    seed: int = -1                           # -1 for random
+    camera_fixed: bool = False               # Lock camera (T2V only)
+    watermark: bool = False                  # Add watermark
+    generate_audio: bool = False             # Generate audio
+
+@app.post("/api/video/generate")
+async def generate_video(req: VideoGenerateRequest):
+    """
+    Generate video using Seedance API.
+    
+    This is an async endpoint that polls for completion.
+    Video generation can take 30-120 seconds.
+    """
+    print(f"INFO: /api/video/generate called")
+    print(f"DEBUG: Model: {req.model}, Duration: {req.duration}s, Resolution: {req.resolution}")
+    print(f"DEBUG: First Frame: {'Yes' if req.first_frame_image else 'No'}")
+    print(f"DEBUG: Last Frame: {'Yes' if req.last_frame_image else 'No'}")
+    
+    try:
+        from video_service import generate_video_seedance
+        
+        result = await generate_video_seedance(
+            prompt=req.prompt,
+            model_name=req.model,
+            first_frame_image=req.first_frame_image,
+            last_frame_image=req.last_frame_image,
+            resolution=req.resolution,
+            ratio=req.ratio,
+            duration=req.duration,
+            seed=req.seed,
+            camera_fixed=req.camera_fixed,
+            watermark=req.watermark,
+            generate_audio=req.generate_audio
+        )
+        
+        return {
+            "status": "success",
+            "message": "Video generation complete",
+            "video_url": result.get("video_url"),
+            "video_base64": result.get("video_base64"),
+            "duration": result.get("duration"),
+            "saved_path": result.get("saved_path"),
+            "task_id": result.get("task_id")
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Video Generation Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/preview-controlnet-preprocessor")
 async def preview_controlnet(req: ControlNetPreviewRequest):
     print("INFO: FastAPI /api/preview-controlnet-preprocessor called")

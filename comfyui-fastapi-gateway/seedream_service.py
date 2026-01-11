@@ -67,12 +67,12 @@ ASPECT_RATIO_TO_SIZE = {
 
 def save_image_to_disk(image_data, model_name="seedream"):
     """
-    Saves image (Base64 string or PIL Image) to output_api/{date}/{model}_{time}_{uid}.png
+    Saves image (Base64 string or PIL Image) to output_api/{date}/image/{model}_{time}_{uid}.png
     Returns: Absolute path of saved file
     """
     try:
         today = datetime.datetime.now().strftime("%Y-%m-%d")
-        output_dir = pathlib.Path("output_api") / today
+        output_dir = pathlib.Path("output_api") / today / "image"
         output_dir.mkdir(parents=True, exist_ok=True)
 
         timestamp = datetime.datetime.now().strftime("%H-%M-%S")
